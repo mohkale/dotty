@@ -126,6 +126,8 @@ func TestJoinPaths(t *testing.T) {
 		{[]string{"~/foo", "~/bar", "baz"}, "~/bar/baz"},
 		// tilde, even by itself, is considered absolute
 		{[]string{"~/foo", "~", "baz"}, "~/baz"},
+		// trailing slashes aren't automatically stripped
+		{[]string{"~/foo/"}, "~/foo/"},
 	}
 
 	for _, test := range testCases {

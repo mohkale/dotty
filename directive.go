@@ -28,6 +28,7 @@ func InitDirectives() {
 	directives = map[edn.Keyword]directiveConstructor{
 		edn.Keyword("import"): dImport,
 		edn.Keyword("mkdir"):  dMkdir,
+		edn.Keyword("link"):   dLink,
 		edn.Keyword("shell"):  dShell,
 		edn.Keyword("clean"):  dClean,
 		edn.Keyword("when"):   dWhen,

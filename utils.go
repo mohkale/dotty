@@ -257,21 +257,29 @@ func isNoExistingFile(err error) bool {
  * and is treated as absolute.
  */
 func joinPath(paths ...string) string {
+	var finalPath string
 	for i := len(paths) - 1; i >= 0; i-- {
 		path := paths[i]
 		// no wibbly wobbly ~user magic here.
 		if path == "~" || strings.HasPrefix(path, "~"+string(fp.Separator)) || fp.IsAbs(path) {
-			return fp.Join(paths[i:]...)
+			finalPath = fp.Join(paths[i:]...)
+			break
 		}
 	}
-	return fp.Join(paths...)
+	if finalPath == "" {
+		finalPath = fp.Join(paths...)
+	}
+	if len(paths) > 0 && strings.HasSuffix(paths[len(paths)-1], string(fp.Separator)) {
+		return finalPath + string(fp.Separator)
+	}
+	return finalPath
 }
 
 func expandTilde(homeDir, path string) string {
 	if path == "~" {
 		return homeDir
 	} else if strings.HasPrefix(path, "~"+string(fp.Separator)) {
-		return fp.Join(homeDir, path[2:])
+		return joinPath(homeDir, path[2:])
 	} else {
 		return path
 	}
