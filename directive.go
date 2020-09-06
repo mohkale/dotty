@@ -7,11 +7,13 @@ import "olympos.io/encoding/edn"
 type Any = interface{}
 type AnySlice = []Any
 
+/**
+ * Represents a single action that dotty can perform.
+ * This can involve linking a file, making a directory, etc.
+ */
 type Directive interface {
-	/**
-	 * run directive, return whether it's ok
-	 */
-	run() bool
+	/** run directive */
+	run()
 
 	/**
 	 * print directive in human readable form as a series
@@ -36,10 +38,14 @@ func InitDirectives() {
 		edn.Keyword("info"):   dInfo,
 		edn.Keyword("warn"):   dWarn,
 		edn.Keyword("def"):    dDef,
-		edn.Keyword("ignore"): func(ctx *Context, args AnySlice) {},
+		edn.Keyword("ignore"): dIgnore,
 	}
 }
 
+/**
+ * find the directive constructor associated with directive and initialise
+ * it with the given arguments and context.
+ */
 func ParseDirective(directive edn.Keyword, ctx *Context, args AnySlice) {
 	if init, ok := directives[directive]; ok {
 		init(ctx, args)
@@ -50,6 +56,10 @@ func ParseDirective(directive edn.Keyword, ctx *Context, args AnySlice) {
 	}
 }
 
+/**
+ * Given a list of directives of the same form as a dotty config file,
+ * evaluate the parse out each directive and pass it to ParseDirective.
+ */
 func DispatchDirectives(ctx *Context, directives AnySlice) {
 	for i, directive := range directives {
 		dir, ok := directive.(AnySlice)

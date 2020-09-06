@@ -10,42 +10,57 @@ import (
 	"olympos.io/encoding/edn"
 )
 
+/**
+ * A directive for removing dead symlinks from paths in the file system.
+ *
+ * A symlink is dead if the file it points to doesn't exist. This directive
+ * goes through all the files in path (recursively if the recursive option
+ * is provided). Finds any that point to root and are dead-links and then
+ * deletes them.
+ *
+ * With the force option it doesn't bother to check whether the symlink points
+ * to some file in root.
+ */
 type cleanDirective struct {
+	// The directory containing files to be cleaned
 	path string
+
+	// The root directory, any dead links must point to a child file
+	// of this path (unless force is true).
 	root string
 
-	/** remove dead links, even if they don't point to a file in root. */
+	// remove dead links, even if they don't point to a file in root
 	force bool
 
-	/** recursively search for deadlinks */
+	// look in path and all valid subdirectories of path
 	recursive bool
 }
 
+/**
+ * constructor for cleanDirective.
+ */
 func dClean(ctx *Context, args AnySlice) {
 	recursiveBuildDirectivesFromPaths(ctx, args,
+		// create and completed paths as a directive to dirChan
 		func(ctx *Context, path string) {
 			ctx.dirChan <- (&cleanDirective{path: expandTilde(ctx.home, path), root: ctx.root}).init(ctx)
 		},
+		// get new paths from the :path parameter when the argument is a map.
 		func(opts map[Any]Any) (Any, bool) {
 			src, ok := opts[edn.Keyword("path")]
 			return src, ok
 		},
+		// update context with opts
 		func(ctx *Context, opts map[Any]Any) *Context {
-			if force, ok := opts[edn.Keyword("force")]; ok {
-				if forceBool, ok := force.(bool); ok {
-					ctx.cleanOpts["force"] = forceBool
-				} else {
-					log.Warn().Str("force", fmt.Sprintf("%v", force)).
-						Msgf("The %s option must be a valid boolean, not %T", edn.Keyword("force"), force)
-				}
-			}
-
-			if recursive, ok := opts[edn.Keyword("recursive")]; ok {
-				if recursiveBool, ok := recursive.(bool); ok {
-					ctx.cleanOpts["recursive"] = recursiveBool
-				} else {
-					log.Warn().Str("recursive", fmt.Sprintf("%v", recursive)).
-						Msgf("The %s option must be a valid boolean, not %T", edn.Keyword("recursive"), recursive)
+			// luckily all configurable fields are booleans so no reflection needed.
+			for _, opt := range []string{"force", "recursive"} {
+				if arg, ok := opts[edn.Keyword(opt)]; ok {
+					if argBool, ok := arg.(bool); ok {
+						ctx.cleanOpts[opt] = argBool
+					} else {
+						log.Warn().Str("force", fmt.Sprintf("%v", arg)).
+							Msgf("The %s option must be a valid boolean, not %T", edn.Keyword(opt), arg)
+					}
 				}
 			}
 
@@ -54,6 +69,7 @@ func dClean(ctx *Context, args AnySlice) {
 	)
 }
 
+// initialise a new directive instanec with options from the Context.
 func (dir *cleanDirective) init(ctx *Context) *cleanDirective {
 	if forceBool, ok := ctx.cleanOpts["force"]; ok {
 		dir.force = forceBool.(bool)
@@ -84,7 +100,7 @@ type FileInfoWithPath struct {
 	path string
 }
 
-func (dir *cleanDirective) run() bool {
+func (dir *cleanDirective) run() {
 	fileCh := make(chan FileInfoWithPath)
 	go dir.getFiles(fileCh)
 	for file := range fileCh {
@@ -119,10 +135,13 @@ func (dir *cleanDirective) run() bool {
 			}
 		}
 	}
-	return false
 }
 
+/**
+ * channel the files this directive should consider for cleaning into ch.
+ */
 func (dir *cleanDirective) getFiles(ch chan FileInfoWithPath) {
+	defer close(ch)
 	if dir.recursive {
 		err := fp.Walk(dir.path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
@@ -147,6 +166,4 @@ func (dir *cleanDirective) getFiles(ch chan FileInfoWithPath) {
 			}
 		}
 	}
-
-	close(ch)
 }

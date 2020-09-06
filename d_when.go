@@ -16,11 +16,10 @@ func dWhen(ctx *Context, args AnySlice) {
 }
 
 // makes conditional subcommands silent (they don't output anything) by default.
-// TODO better name
-var dConditionCmdDefaultOpts = map[string]bool{"interactive": false, "quiet": true}
+var dConditionDefaultCmdOpts = map[string]bool{"interactive": false, "quiet": true}
 
 func dConditionPrepareCmd(opts map[Any]Any) map[Any]Any {
-	for key, value := range dConditionCmdDefaultOpts {
+	for key, value := range dConditionDefaultCmdOpts {
 		if _, ok := opts[edn.Keyword(key)]; !ok {
 			opts[edn.Keyword(key)] = value
 		}
@@ -41,7 +40,7 @@ func dConditionPrepareCmd(opts map[Any]Any) map[Any]Any {
  */
 func dCondition(ctx *Context, arg Any) bool {
 	res := false
-	assignRes := func(dir *shellDirective) { res = dir.run() }
+	assignRes := func(dir *shellDirective) { res = dir.exec() }
 
 	if cmdOpts, ok := arg.(map[Any]Any); ok {
 		dShellMappedCommand(ctx, dConditionPrepareCmd(cmdOpts), assignRes)

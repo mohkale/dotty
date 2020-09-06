@@ -9,23 +9,27 @@ import (
 	"olympos.io/encoding/edn"
 )
 
+// directive to create a directory
 type mkdirDirective struct {
-	/** The path to the directory that is to be made */
+	// The path to the directory that is to be made
 	path string
 
-	/** file permissions for the directory */
+	// file permissions for the directory
 	chmod os.FileMode
 }
 
 func dMkdir(ctx *Context, args AnySlice) {
 	recursiveBuildDirectivesFromPaths(ctx, args,
+		// complete paths go into the directive channel
 		func(ctx *Context, path string) {
 			ctx.dirChan <- (&mkdirDirective{path: expandTilde(ctx.home, path)}).init(ctx)
 		},
+		// encountered a map, recurse into any further maps.
 		func(opts map[Any]Any) (Any, bool) {
 			src, ok := opts[edn.Keyword("path")]
 			return src, ok
 		},
+		// update context.
 		func(ctx *Context, opts map[Any]Any) *Context {
 			if perms, ok := opts[edn.Keyword("chmod")]; ok {
 				if permInt, err := strconv.ParseInt(fmt.Sprintf("%v", perms), 8, 64); err == nil {
@@ -55,18 +59,26 @@ func (dir *mkdirDirective) log() string {
 	return fmt.Sprintf("mkdir %d %v", dir.chmod, dir.path)
 }
 
-func (dir *mkdirDirective) run() bool {
-	log.Debug().Str("path", dir.path).
+func (dir *mkdirDirective) run() {
+	if exists, err := pathExists(dir.path); err != nil {
+		log.Error().Str("path", dir.path).
+			Str("error", err.Error()).
+			Msg("Failed to check whether directory exists")
+		return
+	} else if exists {
+		log.Debug().Str("path", dir.path).
+			Msg("Skipping creating directory because path exists")
+		return
+	}
+
+	log.Info().Str("path", dir.path).
 		Int("permissions", int(dir.chmod)).
 		Msg("Creating directory")
-	// TODO maybe skip if directory exists
 	err := os.MkdirAll(dir.path, dir.chmod)
 	if err != nil {
 		log.Error().Str("path", dir.path).
 			Int("permissions", int(dir.chmod)).
 			Str("error", err.Error()).
 			Msg("Failed to create directory")
-		return false
 	}
-	return true
 }

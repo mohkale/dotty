@@ -68,6 +68,7 @@ func main() {
 	ctx.cwd = ctx.root
 	ctx.bots = opts.Bots.GetValues()
 	ctx.shell = getShell()
+	os.Setenv("HOME", opts.HomeDir)
 
 	env := opts.EnvConfig
 	if env == "" {
@@ -85,14 +86,14 @@ func main() {
 			Str("path", env).
 			Msg("Importing environment file")
 
-		loadEdnSlice(env, func(env AnySlice) {
+		LoadEdnSlice(env, func(env AnySlice) {
 			ParseDirective(edn.Keyword("def"), ctx, env)
 		})
 	}
 
 	go func() {
+		defer close(ctx.dirChan)
 		ParseDirective(edn.Keyword("import"), ctx, AnySlice{"config.edn"})
-		close(ctx.dirChan)
 	}()
 
 	switch cmd {

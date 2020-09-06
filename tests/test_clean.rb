@@ -1,8 +1,9 @@
 require_relative './utils'
 
 RSpec.describe :clean do
+  dotty = Dotty.new
+
   it "can clean out dead links" do
-    dotty = Dotty.new
     dest = Pathname.new(dotty.install_dir) / "foo"
     src = Pathname.new(dotty.config_dir) / "foo"
     dest.make_symlink(src)
@@ -18,7 +19,6 @@ RSpec.describe :clean do
   end
 
   it "can clean out dead links recursively" do
-    dotty = Dotty.new
     dest = Pathname.new(dotty.install_dir) / "foo" / "bar"
     src = Pathname.new(dotty.config_dir) / "bar"
     dest.parent.mkdir()
@@ -36,7 +36,6 @@ RSpec.describe :clean do
   end
 
   it "doesn't clean valid links" do
-    dotty = Dotty.new
     src = Pathname.new(dotty.config_dir) / "foo"
     dest = Pathname.new(dotty.install_dir) / "foo"
     src.open("w")
@@ -53,7 +52,6 @@ RSpec.describe :clean do
   end
 
   it "only cleans links pointing to dotfiles" do
-    dotty = Dotty.new
     # technically a path in my home directory is not in my
     # dotfiles directory.
     src = Pathname.new(dotty.install_dir) / "foo"
@@ -71,7 +69,6 @@ RSpec.describe :clean do
   end
 
   it "cleans any broken links (when force is true)" do
-    dotty = Dotty.new
     src = Pathname.new(dotty.install_dir) / "foo"
     dest = Pathname.new(dotty.install_dir) / "bar"
     dest.make_symlink(src)

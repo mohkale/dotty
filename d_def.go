@@ -27,8 +27,9 @@ import (
 // - otherwise log an error and skip forward.
 //
 // This function has a maximum recursive depth of 1, so there should be little overhead
-// in implementation.
+// in practice.
 
+// Psuedo directive for assigning options in the current context.
 func dDef(ctx *Context, args AnySlice) {
 	var assignEnvOpt = func(key string, val Any) {
 		valString := fmt.Sprintf("%s", val)
@@ -81,6 +82,9 @@ func dDef(ctx *Context, args AnySlice) {
 		})
 }
 
+// helper for dDef which reads each argument for args, if
+// the argument is a string read the next argument as it's
+// value and pass both to callback. Otherwise invoke errHandler.
 func dDefDirectiveOpts(ctx *Context, args AnySlice, callback func(string, Any), errHandler func(Any)) {
 	for i := 0; i < len(args); i++ {
 		key := args[i]

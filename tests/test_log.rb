@@ -20,9 +20,9 @@ RSpec.describe :log do
 
     dotty_run_script script do |dotty, sin, sout, serr, proc|
       err = serr.read().uncolorize
-      expect(err).to match(/DBG hello world friend/)
-      expect(err).to match(/INF hello world friend/)
-      expect(err).to match(/WRN hello world friend/)
+      expect(err).to match(/DBG #{msg}/)
+      expect(err).to match(/INF #{msg}/)
+      expect(err).to match(/WRN #{msg}/)
     end
   end
 

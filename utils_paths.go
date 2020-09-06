@@ -2,11 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 	fp "path/filepath"
-	"runtime"
 	"strings"
-	"syscall"
 
 	"github.com/rs/zerolog/log"
 )
@@ -52,6 +49,7 @@ func recursiveBuildPath(
 	preJoin func(string) (string, bool),
 	err recursiveBuildPathErrorCallback,
 ) {
+	defer close(ch)
 	var recursiveDo func(paths AnySlice, base string)
 	recursiveDo = func(paths AnySlice, base string) {
 		lastRecurse := 0
@@ -94,8 +92,6 @@ func recursiveBuildPath(
 			err(base, path)
 		}
 	}
-
-	close(ch)
 }
 
 /**
@@ -157,95 +153,8 @@ func recursiveBuildDirectivesFromPaths(
 	<-done
 }
 
-func isWindows() bool {
-	return runtime.GOOS == "windows"
-}
-
-func isDarwin() bool {
-	return runtime.GOOS == "darwin"
-}
-
-func isLinux() bool {
-	return runtime.GOOS == "linux" || runtime.GOOS == "fruntime.GOOSeebsd" || runtime.GOOS == "daruntime.GOOSwin"
-}
-
-func getShell() string {
-	shell := os.Getenv("SHELL")
-
-	if shell == "" {
-		log.Warn().
-			Msg("No SHELL variable found, looking for fallback.")
-
-		if isLinux() || isDarwin() {
-			// WARN not checked before returning
-			shell = "/bin/sh"
-		} else if isWindows() {
-			// RANT [[https://www.google.com/search?q=why+can%27t+you+be+normal+meme&source=lnms&tbm=isch&sa=X&ved=2ahUKEwjC9c7H183rAhUFZcAKHQVIBcQQ_AUoAXoECA8QAw&biw=1364&bih=1106&dpr=0.88][why can't you be normal]]?
-			shell = "cmd"
-		}
-
-		if shell == "" {
-			log.Fatal().Str("platform", runtime.GOOS).
-				Msg("Failed to find default SHELL for platfomr")
-		} else {
-			log.Info().Str("shell", shell).Msg("SHELL assigned to")
-		}
-	}
-
-	return shell
-}
-
-func _pathExists(path string, extraCheck func(os.FileInfo) bool) (bool, error) {
-	stat, err := os.Stat(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return false, nil
-		} else {
-			errno := err.(*os.PathError).Err.(syscall.Errno)
-			if errno == syscall.ENOTDIR {
-				return false, nil
-			}
-			return false, err
-		}
-	}
-	return extraCheck(stat), nil
-}
-
-func pathExists(path string) (bool, error) {
-	return _pathExists(path, func(_ os.FileInfo) bool { return true })
-}
-
-func fileExists(path string) (bool, error) {
-	return _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() })
-}
-
-// TODO cleanup into fileExists
-func dirExists(path string) (bool, error) {
-	return _pathExists(path, func(fi os.FileInfo) bool { return fi.IsDir() })
-}
-
-/**
- * return the first path in paths that points to an existing file.
- * if there's an error while stating any file, immeadiately returns
- * cancelling any pending file checks.
- */
-func findExistingFile(paths ...string) (string, error) {
-	for _, path := range paths {
-		log.Debug().Str("path", path).Msg("checking for file at path")
-		exists, err := fileExists(path)
-		if err != nil {
-			return "", err
-		}
-		if exists {
-			return path, nil
-		}
-	}
-
-	return "", fmt.Errorf("unable to find any existing file")
-}
-
 func isNoExistingFile(err error) bool {
-	return err.Error() == "unable to find any existing file"
+	return err.Error() == "Unable to find any existing file"
 }
 
 /**
@@ -255,6 +164,9 @@ func isNoExistingFile(err error) bool {
  *
  * Any paths prefixed with ~/ is considered to be pointing to the users home directory
  * and is treated as absolute.
+ *
+ * NOTE: Trailing slashes aren't stripped by this implementation
+ *  joinPath("~/foo", "bar/") // => "~/foo/bar/"
  */
 func joinPath(paths ...string) string {
 	var finalPath string
@@ -275,6 +187,9 @@ func joinPath(paths ...string) string {
 	return finalPath
 }
 
+/**
+ * Substitute ~/ for homeDir in path
+ */
 func expandTilde(homeDir, path string) string {
 	if path == "~" {
 		return homeDir
@@ -289,7 +204,7 @@ func expandTilde(homeDir, path string) string {
  * Assert whether absolute path targPath is relative to basepath basepath.
  *
  * if either path isn't absolute, then this function will return false, even
- * though it may not be true.
+ * though the two paths may actually be relative.
  */
 func fileIsRelative(basepath, targPath string) bool {
 	if res, err := fp.Rel(targPath, basepath); err != nil {

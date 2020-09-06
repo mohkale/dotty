@@ -7,19 +7,35 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+/**
+ * Store for contextual information in the dotty runtime.
+ */
 type Context struct {
-	root      string
-	cwd       string
-	home      string
-	shell     string
-	bots      []string
-	dirChan   chan Directive
+	root string
+	cwd  string
+
+	// home directory for the current user.
+	// It's kept here because the it shouldn't be modifiable.
+	home string
+
+	// The default shell used for subprocesses, this can be overriden.
+	// using envOpts.
+	shell string
+
+	bots []string
+
+	// send parsed directives through here.
+	dirChan chan Directive
+
+	// Key/Value options for specific directives or subshell environments.
 	mkdirOpts map[string]Any
 	linkOpts  map[string]Any
 	cleanOpts map[string]Any
 	shellOpts map[string]Any
 	envOpts   map[string]string
-	_env      []string
+
+	// generated environment of the form that exec.Command can accept.
+	_env []string
 }
 
 func CreateContext() *Context {
@@ -39,6 +55,9 @@ func CreateContext() *Context {
 	}
 }
 
+/**
+ * Get options map for the directive associated with key.
+ */
 func (ctx *Context) optsFromString(key string) (map[string]Any, bool) {
 	switch {
 	case key == "mkdir":
@@ -54,7 +73,7 @@ func (ctx *Context) optsFromString(key string) (map[string]Any, bool) {
 	return nil, false
 }
 
-func cloneDirectiveOpts(src map[string]Any, dest map[string]Any) {
+func _cloneDirectiveOpts(src map[string]Any, dest map[string]Any) {
 	for key, value := range src {
 		dest[key] = value
 	}
@@ -70,10 +89,10 @@ func (ctx *Context) fullClone() *Context {
 	clone.bots = make([]string, len(ctx.bots))
 	copy(clone.bots, ctx.bots)
 	clone.dirChan = make(chan Directive)
-	cloneDirectiveOpts(ctx.mkdirOpts, clone.mkdirOpts)
-	cloneDirectiveOpts(ctx.linkOpts, clone.linkOpts)
-	cloneDirectiveOpts(ctx.cleanOpts, clone.cleanOpts)
-	cloneDirectiveOpts(ctx.shellOpts, clone.shellOpts)
+	_cloneDirectiveOpts(ctx.mkdirOpts, clone.mkdirOpts)
+	_cloneDirectiveOpts(ctx.linkOpts, clone.linkOpts)
+	_cloneDirectiveOpts(ctx.cleanOpts, clone.cleanOpts)
+	_cloneDirectiveOpts(ctx.shellOpts, clone.shellOpts)
 	for key, value := range ctx.envOpts {
 		clone.envOpts[key] = value
 	}
@@ -93,6 +112,9 @@ func (ctx *Context) clone() *Context {
 	return c
 }
 
+/**
+ * clone the current context and change the cwd.
+ */
 func (ctx *Context) chdir(cwd string) *Context {
 	c := ctx.clone()
 	c.cwd = cwd
@@ -129,7 +151,7 @@ func (ctx *Context) eval(str string) (string, bool) {
 }
 
 /**
- * context environment has been modified, getenv() needs to be rebuilt.
+ * context environment has been modified, environ() needs to be rebuilt.
  */
 func (ctx *Context) invalidateEnv() {
 	ctx._env = nil

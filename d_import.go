@@ -10,7 +10,9 @@ import (
 	"olympos.io/encoding/edn"
 )
 
-func loadEdnSlice(fpath string, callback func(AnySlice)) {
+// load an edn slice of directives from the file at fpath and pass the
+// result to callback.
+func LoadEdnSlice(fpath string, callback func(AnySlice)) {
 	fd, err := os.Open(fpath)
 	if err != nil {
 		log.Fatal().Str("path", fpath).
@@ -36,18 +38,14 @@ func loadEdnSlice(fpath string, callback func(AnySlice)) {
 	callback(conf)
 }
 
-/**
- * Config import pseudo directive. It's a pseudo directive because
- * it doesn't return a directive to be evaluated. Instead it finishes
- * evaluation after being invoked and then exits.
- */
+// psuedo directive to import (one or more) configuration files.
 func dImport(ctx *Context, args AnySlice) {
 	if len(args) == 0 {
 		log.Warn().Msg("Tried to import with no files")
 		return
 	}
 
-	pathChan := make(chan string)
+	pathChan := make(chan string) // read paths to import into here.
 	go recursiveBuildPath(pathChan, args, "", ctx.eval, func(base string, pathArg Any) {
 		log.Error().
 			Str("arg", fmt.Sprintf("%s", pathArg)).
@@ -66,20 +64,27 @@ func dImport(ctx *Context, args AnySlice) {
 				Msg(err.Error())
 			continue
 		}
-		log.Info().Str("path", file).Msg("Importing config file")
 
-		loadEdnSlice(file, func(conf AnySlice) {
+		log.Info().Str("path", file).Msg("Importing config file")
+		LoadEdnSlice(file, func(conf AnySlice) {
 			DispatchDirectives(ctx.chdir(path.Dir(file)), conf)
 		})
 	}
 }
 
+// given a cwd and a target import, try to find a file that matches
+// the lookup rules for an import config and return it.
+//
+// if no file can be found or there was an error while checking for
+// a file, return an error.
 func resolveImport(cwd, target string) (string, error) {
 	log.Debug().Str("cwd", cwd).
 		Str("target", target).
 		Msg("Looking for import target")
 
 	targets := []string{
+		// these really should be lazy, but go doesn't really have
+		// a nice way of doing that... maybe channels.
 		joinPath(cwd, target, "dotty.edn"),
 		joinPath(cwd, target+".dotty"),
 		joinPath(cwd, target+".edn"),
@@ -89,15 +94,10 @@ func resolveImport(cwd, target string) (string, error) {
 		joinPath(cwd, target),
 	}
 
-	// base := joinPath(cwd, target)
-	// base2 := joinPath(base, ".config")
-	// withExt := base + ".edn"
-	// dirBasenameAsFile := path.Base(target)
-
 	targetFile, err := findExistingFile(targets...)
 	if err != nil {
 		if isNoExistingFile(err) {
-			return "", fmt.Errorf("failed to resolve import target")
+			return "", fmt.Errorf("Failed to resolve import target")
 		} else {
 			return "", err
 		}

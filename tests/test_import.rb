@@ -2,8 +2,9 @@ require 'colorize'
 require_relative 'utils'
 
 RSpec.describe :import do
+  dotty = Dotty.new
+
   it "can import another file" do
-    dotty = Dotty.new
     import = "foo"
     # when trying to import target #{import}, these are all the
     # file paths dotty should accept.
@@ -34,7 +35,6 @@ RSpec.describe :import do
   end
 
   it "doesn't import a directory" do
-    dotty = Dotty.new
     target = Pathname.new("foo")
     dotty.in_config { target.mkdir() }
 

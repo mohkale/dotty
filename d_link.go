@@ -11,6 +11,7 @@ import (
 	"olympos.io/encoding/edn"
 )
 
+// A directive to link files from src into dest.
 type linkDirective struct {
 	src  []string
 	dest []string
@@ -34,6 +35,14 @@ type linkDirective struct {
 	symbolic bool
 }
 
+// generate the paths for a link (src or dest) from arg.
+//
+// NOTE we can't use recursiveBuildDirectivesFromPaths because srcs
+// and destinations aren't grouped into a single arg. Their seperated
+// as "src" then "dest" which can appear as many times as desired.
+//
+// logTitle is used to let include which path type (src or dest) we're
+// building in the logging output.
 func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool) {
 	if str, ok := arg.(string); ok {
 		return []string{joinPath(ctx.cwd, str)}, true
@@ -55,44 +64,48 @@ func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool)
 	return nil, false
 }
 
+// constructor for linkDirective
 func dLink(ctx *Context, args AnySlice) {
+LoopStart:
 	for i := 0; i < len(args); i++ {
 		path := args[i]
 
 		if pathMap, ok := path.(map[Any]Any); ok {
-			srcArg, ok := pathMap[edn.Keyword("src")]
-			if !ok {
-				log.Error().Str("spec", fmt.Sprintf("%s", path)).
-					Msgf("link directive must specify a %s", edn.Keyword("src"))
-				continue
+			// to avoid having to repeat the following logic twice, we abstract
+			// the interface for dealing with both src and dest into two fields
+			// in a struct.
+			paths := []*struct {
+				field string
+				paths []string
+			}{
+				{"src", []string{}},
+				{"dest", []string{}},
 			}
 
-			src, ok := dLinkGeneratePaths(ctx, srcArg, "src")
-			if !ok {
-				continue
+			for _, path := range paths {
+				arg, ok := pathMap[edn.Keyword(path.field)]
+				if !ok {
+					log.Error().Str("spec", fmt.Sprintf("%s", path)).
+						Msgf("Link directive must specify a %s", edn.Keyword(path.field))
+					continue LoopStart
+				}
+				if paths, ok := dLinkGeneratePaths(ctx, arg, path.field); ok {
+					path.paths = paths
+				} else {
+					continue LoopStart
+				}
 			}
 
-			destArg, ok := pathMap[edn.Keyword("dest")]
-			if !ok {
-				log.Error().Str("spec", fmt.Sprintf("%s", path)).
-					Msgf("link directive must specify a %s", edn.Keyword("dest"))
-				continue
-			}
-
-			dest, ok := dLinkGeneratePaths(ctx, destArg, "dest")
-			if !ok {
-				continue
-			}
-
-			ctx.dirChan <- (&linkDirective{src: src, dest: dest}).init(ctx, pathMap)
+			ctx.dirChan <- (&linkDirective{src: paths[0].paths, dest: paths[1].paths}).init(ctx, pathMap)
 		} else {
 			if i == len(args)-1 {
-				log.Error().Str("path", fmt.Sprintf("%s", path)).
-					Msg("link: src with no dest encountered")
+				log.Error().Str("src", fmt.Sprintf("%s", path)).
+					Msg("Link src with no destination encountered")
 				continue
 			}
 
 			i++
+			// NOTE cleaning up this duplication would take even more lines, so lets leave it.
 			src, ok := dLinkGeneratePaths(ctx, path, "src")
 			if !ok {
 				continue
@@ -109,8 +122,6 @@ func dLink(ctx *Context, args AnySlice) {
 
 /**
  * populate directive defaults from either the context or current options.
- *
- * RANT GIVE ME GENERICS, plz
  */
 func (dir *linkDirective) init(ctx *Context, opts map[Any]Any) *linkDirective {
 	for _, slice := range [][]string{dir.src, dir.dest} {
@@ -119,87 +130,46 @@ func (dir *linkDirective) init(ctx *Context, opts map[Any]Any) *linkDirective {
 		}
 	}
 
-	dir.mkdirs = true
-	mkdirs, ok := ctx.linkOpts["mkdirs"]
-	if optMkdir, optOk := opts[edn.Keyword("mkdirs")]; optOk {
-		ok = true
-		mkdirs = optMkdir
-	}
-	if ok {
-		if mkdirs, ok := mkdirs.(bool); ok {
-			dir.mkdirs = mkdirs
-		} else {
-			log.Warn().Msgf("mkdir should be a boolean value, not %T", mkdirs)
-		}
-	}
-
-	dir.relink = false
-	relink, ok := ctx.linkOpts["relink"]
-	if optRelink, optOk := opts[edn.Keyword("relink")]; optOk {
-		ok = true
-		relink = optRelink
-	}
-	if ok {
-		if relink, ok := relink.(bool); ok {
-			dir.relink = relink
-		} else {
-			log.Warn().Msgf("mkdir should be a boolean value, not %T", mkdirs)
-		}
+	// boolean fields for the directive and their associated defaults.
+	fields := []struct {
+		field *bool
+		name  string
+		value bool
+	}{
+		{&dir.mkdirs, "mkdirs", true},
+		{&dir.relink, "relink", false},
+		{&dir.force, "force", false},
+		{&dir.glob, "glob", false},
+		{&dir.ignoreMissing, "ignore-missing", false},
+		{&dir.symbolic, "symbolic", true},
 	}
 
-	dir.force = false
-	force, ok := ctx.linkOpts["force"]
-	if optForce, optOk := opts[edn.Keyword("force")]; optOk {
-		ok = true
-		force = optForce
-	}
-	if ok {
-		if force, ok := force.(bool); ok {
-			dir.force = force
-		} else {
-			log.Warn().Msgf("mkdir should be a boolean value, not %T", mkdirs)
+	for _, field := range fields {
+		opt, ok := ctx.linkOpts[field.name]
+		// override value from context with value from map (when provided).
+		if optVal, optOk := opts[edn.Keyword(field.name)]; optOk {
+			opt = optVal
+			ok = true
 		}
+		if ok {
+			if optBool, ok := opt.(bool); ok {
+				field.value = optBool
+			} else {
+				log.Warn().Msgf("%s should be a boolean value, not %T", field.name, opt)
+			}
+		}
+		*field.field = field.value
 	}
 
-	dir.glob = false
-	glob, ok := ctx.linkOpts["glob"]
-	if optGlob, optOk := opts[edn.Keyword("glob")]; optOk {
-		ok = true
-		glob = optGlob
-	}
-	if ok {
-		if glob, ok := glob.(bool); ok {
-			dir.glob = glob
-		} else {
-			log.Warn().Msgf("mkdir should be a boolean value, not %T", mkdirs)
-		}
-	}
-
-	dir.ignoreMissing = false
-	ignoreMissing, ok := ctx.linkOpts["ignore-missing"]
-	if optIgnoreMissing, optOk := opts[edn.Keyword("ignore-missing")]; optOk {
-		ok = true
-		ignoreMissing = optIgnoreMissing
-	}
-	if ok {
-		if ignoreMissing, ok := ignoreMissing.(bool); ok {
-			dir.ignoreMissing = ignoreMissing
-		} else {
-			log.Warn().Msgf(":ignore-missing should be a boolean value, not %T", mkdirs)
-		}
-	}
-
-	dir.symbolic = true
-	symbolic, ok := ctx.linkOpts["symbolic"]
-	if optSymbolic, optOk := opts[edn.Keyword("symbolic")]; optOk {
-		ok = true
-		symbolic = optSymbolic
-	}
-	if ok {
-		if symbolic, ok := symbolic.(bool); ok {
-			dir.symbolic = symbolic
-		} else {
-			log.Warn().Msgf("mkdir should be a boolean value, not %T", mkdirs)
+	// linking multiple files into one (or more) destinations. Make sure
+	// each destination has a trailing slash to indicate it's a directory.
+	if dir.glob || len(dir.src) > 1 {
+		for i := 0; i < len(dir.dest); i++ {
+			// WARN this'll probably fail if you're using windows style paths.
+			// TODO fix... by never using windows style paths :-P.
+			if !strings.HasSuffix(dir.dest[i], string(fp.Separator)) {
+				dir.dest[i] += string(fp.Separator)
+			}
 		}
 	}
 
@@ -231,22 +201,13 @@ func (dir *linkDirective) log() string {
 	return res
 }
 
-func (dir *linkDirective) run() bool {
-	if dir.glob || len(dir.src) > 1 {
-		// linking multiple files into one (or more) destinations. Make sure
-		// each destination has a trailing slash to indicate it's a directory.
-		for i := 0; i < len(dir.dest); i++ {
-			// WARN this'll probably fail if you're using windows style paths.
-			// TODO fix
-			if !strings.HasSuffix(dir.dest[i], string(fp.Separator)) {
-				dir.dest[i] += string(fp.Separator)
-			}
-		}
-	}
-
+func (dir *linkDirective) run() {
 	srcCh := make(chan string)
 	go dir.linkSources(srcCh)
 
+	// TODO some heavy refactoring. There's a lot of edge cases here
+	// so it's easier to keep it all in one place, but this should really
+	// be broken down.
 	for src := range srcCh {
 		for _, dest := range dir.dest {
 			if strings.HasSuffix(dest, string(fp.Separator)) {
@@ -255,7 +216,6 @@ func (dir *linkDirective) run() bool {
 
 			destInfo, err := os.Lstat(dest)
 			destExists := true
-			// TODO some heavy refactoring
 			if err != nil {
 				if os.IsNotExist(err) {
 					destExists = false
@@ -337,10 +297,9 @@ func (dir *linkDirective) run() bool {
 			}
 		}
 	}
-
-	return false
 }
 
+// The function used to link this kind of directive (symbolic or hard link).
 func (dir *linkDirective) linker() func(string, string) error {
 	if dir.symbolic {
 		return os.Symlink
@@ -349,6 +308,12 @@ func (dir *linkDirective) linker() func(string, string) error {
 	}
 }
 
+// pass list of files to be linked from the sources for this
+// directive into ch.
+//
+// This also expands any globs when dir.glob is true.
+// WARN when expanding globs, there's a chance no files will
+// be returned.
 func (dir *linkDirective) linkSources(ch chan string) {
 	defer close(ch)
 	for _, src := range dir.src {
@@ -366,8 +331,6 @@ func (dir *linkDirective) linkSources(ch chan string) {
 			// we're linking from file to file, first check whether the file exists
 			// or if we don't care, then return the file as is.
 			if dir.symbolic && dir.ignoreMissing {
-				// NOTE only symlinks can have missing sources, hardlinks require a
-				// backing file.
 				ch <- src
 			} else if exists, err := pathExists(src); err != nil {
 				log.Error().Str("path", src).

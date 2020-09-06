@@ -1,28 +1,15 @@
 package main
 
-import "olympos.io/encoding/edn"
-
-func ignoreDirective() AnySlice {
-	return AnySlice{edn.Keyword("ignore")}
-}
-
-func tWindows(directive AnySlice) (AnySlice, error) {
-	if isWindows() {
-		return directive, nil
+func _tPlatform(predicate func() bool) func(AnySlice) (AnySlice, error) {
+	return func(dir AnySlice) (AnySlice, error) {
+		if predicate() {
+			return dir, nil
+		}
+		return ignoreDirective(), nil
 	}
-	return ignoreDirective(), nil
 }
 
-func tLinux(directive AnySlice) (AnySlice, error) {
-	if isLinux() {
-		return directive, nil
-	}
-	return ignoreDirective(), nil
-}
-
-func tDarwin(directive AnySlice) (AnySlice, error) {
-	if isDarwin() {
-		return directive, nil
-	}
-	return ignoreDirective(), nil
-}
+var tWindows = _tPlatform(isWindows)
+var tLinux = _tPlatform(isLinux)
+var tDarwin = _tPlatform(isDarwin)
+var tUnix = _tPlatform(isUnixy)

@@ -10,25 +10,35 @@ import (
 	"olympos.io/encoding/edn"
 )
 
+// A directive for spawning and running shell commands
 type shellDirective struct {
-	cmd   string
-	desc  string
-	shell string
-	env   []string
+	// the command line to exec. this should be a string of the form
+	// the you can pass to sh -c.
+	cmd string
 
-	/** suppress logging related to command (including exit status) */
+	// environment variables (of a form compatible with exec.Spawn)
+	env []string
+
+	// the shell in which to run the command.
+	shell string
+
+	// an optional message to be outputted (at INFO level) before
+	// running cmd.
+	desc string
+
+	// suppress logging related to command (including exit status)
 	quiet bool
 
-	/** toggle the default values of stdin, stdout, etderr */
+	// toggle the default values of stdin, stdout, stderr
 	interactive bool
 
-	/** let command read from standard input. */
+	// let command read from standard input.
 	stdin bool
 
-	/** let command write to stdout */
+	// let command write to stdout
 	stdout bool
 
-	/** let command write to stderr */
+	// let command write to stderr
 	stderr bool
 }
 
@@ -124,6 +134,8 @@ func (dir *shellDirective) init(ctx *Context, opts map[Any]Any) *shellDirective 
 		}
 	}
 
+	// WARN we need interactive to set the defaults for stdin,out,err so we can't
+	// refactor it out.
 	dir.interactive = false
 	interactive, ok := ctx.shellOpts["interactive"]
 	if optInteractive, optOk := opts[edn.Keyword("interactive")]; optOk {
@@ -138,63 +150,32 @@ func (dir *shellDirective) init(ctx *Context, opts map[Any]Any) *shellDirective 
 		}
 	}
 
-	dir.quiet = false
-	quiet, ok := ctx.shellOpts["quiet"]
-	if optQuiet, optOk := opts[edn.Keyword("quiet")]; optOk {
-		quiet = optQuiet
-		ok = true
-	}
-	if ok {
-		if quiet, ok := quiet.(bool); ok {
-			dir.quiet = quiet
-		} else {
-			log.Warn().Msgf("quiet should be a boolean value, not %T", quiet)
-		}
+	fields := []*struct {
+		field *bool
+		name  string
+		value bool
+	}{
+		{&dir.quiet, "quiet", false},
+		{&dir.stdin, "stdin", dir.interactive},
+		{&dir.stdout, "stdout", dir.interactive},
+		{&dir.stderr, "stderr", dir.interactive},
 	}
 
-	if dir.interactive {
-		dir.stdout = true
-		dir.stderr = true
-		dir.stdin = true
-	}
-
-	stdout, ok := ctx.shellOpts["stdout"]
-	if optStdout, optOk := opts[edn.Keyword("stdout")]; optOk {
-		stdout = optStdout
-		ok = true
-	}
-	if ok {
-		if stdout, ok := stdout.(bool); ok {
-			dir.stdout = stdout
-		} else {
-			log.Warn().Msgf("stdout should be a boolean value, not %T", stdout)
+	for _, field := range fields {
+		opt, ok := ctx.shellOpts[field.name]
+		// override value from context with value from map (when provided).
+		if optVal, optOk := opts[edn.Keyword(field.name)]; optOk {
+			opt = optVal
+			ok = true
 		}
-	}
-
-	stderr, ok := ctx.shellOpts["stderr"]
-	if optStderr, optOk := opts[edn.Keyword("stderr")]; optOk {
-		stderr = optStderr
-		ok = true
-	}
-	if ok {
-		if stderr, ok := stderr.(bool); ok {
-			dir.stderr = stderr
-		} else {
-			log.Warn().Msgf("stderr should be a boolean value, not %T", stderr)
+		if ok {
+			if optBool, ok := opt.(bool); ok {
+				field.value = optBool
+			} else {
+				log.Warn().Msgf("%s should be a boolean value, not %T", field.name, opt)
+			}
 		}
-	}
-
-	stdin, ok := ctx.shellOpts["stdin"]
-	if optStdin, optOk := opts[edn.Keyword("stdin")]; optOk {
-		stdin = optStdin
-		ok = true
-	}
-	if ok {
-		if stdin, ok := stdin.(bool); ok {
-			dir.stdin = stdin
-		} else {
-			log.Warn().Msgf("stdin should be a boolean value, not %T", stdin)
-		}
+		*field.field = field.value
 	}
 
 	return dir
@@ -204,10 +185,12 @@ func (dir *shellDirective) log() string {
 	return fmt.Sprintf("shell %s", strings.ReplaceAll(dir.cmd, "\n", "\\n"))
 }
 
-func (dir *shellDirective) run() bool {
-	// TODO handle windows paths
-	// TODO pass environment variables
-	cmd := exec.Command(dir.shell, "-c", dir.cmd)
+func (dir *shellDirective) run() {
+	dir.exec()
+}
+
+func (dir *shellDirective) exec() bool {
+	cmd := exec.Command(dir.shell, dir.shellArgs()...)
 	cmd.Env = dir.env
 
 	if dir.desc != "" {
@@ -250,4 +233,16 @@ func (dir *shellDirective) run() bool {
 		return false
 	}
 	return true
+}
+
+// return the flags to pass to the shell to run cmd
+//
+// this tries to get around annoying errors when using
+// windows cmd.exe as well.
+func (dir *shellDirective) shellArgs() []string {
+	if dir.shell == "cmd" || dir.shell == "cmd.exe" {
+		return []string{"/c", dir.cmd}
+	} else {
+		return []string{"-c", dir.cmd}
+	}
 }
