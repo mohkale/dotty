@@ -1,10 +1,24 @@
 package main
 
-import "olympos.io/encoding/edn"
+import (
+	"fmt"
+	"olympos.io/encoding/edn"
+)
 
 func InitTags() {
-	edn.AddTagFn("dot/if-windows", tWindows)
-	edn.AddTagFn("dot/if-linux", tLinux)
-	edn.AddTagFn("dot/if-darwin", tDarwin)
-	edn.AddTagFn("dot/if-unix", tUnix)
+	tags := []struct {
+		name string
+		fun  func(AnySlice) (AnySlice, error)
+	}{
+		{"if-windows", tWindows},
+		{"if-linux", tLinux},
+		{"if-darwin", tDarwin},
+		{"if-unix", tUnix},
+		{"gen-bots", tGenBots},
+	}
+	for _, tag := range tags {
+		if err := edn.AddTagFn("dot/"+tag.name, tag.fun); err != nil {
+			panic(fmt.Sprintf("Failed to assign tag %s: %s", tag.name, err))
+		}
+	}
 }
