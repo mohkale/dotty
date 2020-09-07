@@ -41,8 +41,8 @@ func dDef(ctx *Context, args AnySlice) {
 	}
 
 	var keyTypeError = func(key Any) {
-		log.Warn().Str("key", fmt.Sprintf("%s", key)).
-			Msgf("%s keys must be strings, not %T", edn.Keyword("def"), key)
+		log.Warn().Interface("key", key).
+			Msgf(":def keys must be strings, not %T", key)
 	}
 
 	dDefDirectiveOpts(ctx, args, assignEnvOpt,
@@ -59,8 +59,8 @@ func dDef(ctx *Context, args AnySlice) {
 
 			dest, ok := args[0].(edn.Keyword)
 			if !ok {
-				log.Warn().Str("key", fmt.Sprintf("%s", args[0])).
-					Msgf("%s directive keys must be EDN symbols, not %T", edn.Keyword("def"), args[0])
+				log.Warn().Interface("key", args[0]).
+					Msgf(":def directive keys must be EDN symbols, not %T", args[0])
 				return
 			}
 

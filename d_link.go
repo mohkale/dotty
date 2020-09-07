@@ -49,8 +49,8 @@ func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool)
 	} else if slice, ok := arg.(AnySlice); ok {
 		ch, paths := make(chan string), make([]string, 0)
 		go recursiveBuildPath(ch, slice, ctx.cwd, ctx.eval, func(_ string, arg Any) {
-			log.Fatal().Str("spec", fmt.Sprintf("%s", arg)).
-				Str("path", fmt.Sprintf("%s", arg)).
+			log.Fatal().Interface("spec", arg).
+				Interface("path", arg).
 				Msgf("link paths must be a string or a list of strings, not %T", arg)
 		})
 		for path := range ch {
@@ -59,7 +59,7 @@ func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool)
 		return paths, true
 	}
 
-	log.Error().Str("src", fmt.Sprintf("%s", arg)).
+	log.Error().Interface("src", arg).
 		Msgf("%s must be a path, or a list of paths, not %T", logTitle, arg)
 	return nil, false
 }
@@ -85,7 +85,7 @@ LoopStart:
 			for _, path := range paths {
 				arg, ok := pathMap[edn.Keyword(path.field)]
 				if !ok {
-					log.Error().Str("spec", fmt.Sprintf("%s", path)).
+					log.Error().Interface("spec", path).
 						Msgf("Link directive must specify a %s", edn.Keyword(path.field))
 					continue LoopStart
 				}
@@ -99,7 +99,7 @@ LoopStart:
 			ctx.dirChan <- (&linkDirective{src: paths[0].paths, dest: paths[1].paths}).init(ctx, pathMap)
 		} else {
 			if i == len(args)-1 {
-				log.Error().Str("src", fmt.Sprintf("%s", path)).
+				log.Error().Interface("src", path).
 					Msg("Link src with no destination encountered")
 				continue
 			}
@@ -130,36 +130,12 @@ func (dir *linkDirective) init(ctx *Context, opts map[Any]Any) *linkDirective {
 		}
 	}
 
-	// boolean fields for the directive and their associated defaults.
-	fields := []struct {
-		field *bool
-		name  string
-		value bool
-	}{
-		{&dir.mkdirs, "mkdirs", true},
-		{&dir.relink, "relink", false},
-		{&dir.force, "force", false},
-		{&dir.glob, "glob", false},
-		{&dir.ignoreMissing, "ignore-missing", false},
-		{&dir.symbolic, "symbolic", true},
-	}
-
-	for _, field := range fields {
-		opt, ok := ctx.linkOpts[field.name]
-		// override value from context with value from map (when provided).
-		if optVal, optOk := opts[edn.Keyword(field.name)]; optOk {
-			opt = optVal
-			ok = true
-		}
-		if ok {
-			if optBool, ok := opt.(bool); ok {
-				field.value = optBool
-			} else {
-				log.Warn().Msgf("%s should be a boolean value, not %T", field.name, opt)
-			}
-		}
-		*field.field = field.value
-	}
+	readMapOptionBool(ctx.linkOpts, opts, &dir.mkdirs, "mkdirs", true)
+	readMapOptionBool(ctx.linkOpts, opts, &dir.relink, "relink", false)
+	readMapOptionBool(ctx.linkOpts, opts, &dir.force, "force", false)
+	readMapOptionBool(ctx.linkOpts, opts, &dir.glob, "glob", false)
+	readMapOptionBool(ctx.linkOpts, opts, &dir.ignoreMissing, "ignore-missing", false)
+	readMapOptionBool(ctx.linkOpts, opts, &dir.symbolic, "symbolic", true)
 
 	// linking multiple files into one (or more) destinations. Make sure
 	// each destination has a trailing slash to indicate it's a directory.
@@ -312,6 +288,7 @@ func (dir *linkDirective) linker() func(string, string) error {
 // directive into ch.
 //
 // This also expands any globs when dir.glob is true.
+//
 // WARN when expanding globs, there's a chance no files will
 // be returned.
 func (dir *linkDirective) linkSources(ch chan string) {

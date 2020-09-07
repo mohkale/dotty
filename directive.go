@@ -1,6 +1,5 @@
 package main
 
-import "fmt"
 import "github.com/rs/zerolog/log"
 import "olympos.io/encoding/edn"
 
@@ -51,7 +50,7 @@ func ParseDirective(directive edn.Keyword, ctx *Context, args AnySlice) {
 		init(ctx, args)
 	} else {
 		log.Error().Str("directive", directive.String()).
-			Str("args", fmt.Sprintf("%s", args)).
+			Interface("args", args).
 			Msg("failed to find directive")
 	}
 }
@@ -64,7 +63,7 @@ func DispatchDirectives(ctx *Context, directives AnySlice) {
 	for i, directive := range directives {
 		dir, ok := directive.(AnySlice)
 		if !ok {
-			log.Error().Str("arg", fmt.Sprintf("%s", directive)).
+			log.Error().Interface("arg", directive).
 				Msgf("Directives must be a list, not %T", directive)
 			return
 		}
@@ -80,8 +79,55 @@ func DispatchDirectives(ctx *Context, directives AnySlice) {
 			ParseDirective(dirKey, ctx, args)
 		} else {
 			log.Warn().Int("index", i+1).
-				Str("value", fmt.Sprintf("%v", dir)).
+				Interface("value", dir).
 				Msg("Directive statements should be keywords")
 		}
 	}
+}
+
+// The rest of this file just consists of utility functions to help make parsing
+// fields out of simply AnyMaps a lot more straightforward.
+
+// read the boolean value name from ctx or opts into field, assigning a
+// default value of def.
+func readMapOptionBool(ctxOpts map[string]Any, opts map[Any]Any, field *bool, name string, def bool) bool {
+	*field = def // assign default
+
+	opt, ok := ctxOpts[name]
+	// override value from context with value from map (when provided).
+	if optVal, optOk := opts[edn.Keyword(name)]; optOk {
+		opt = optVal
+		ok = true
+	}
+	if ok {
+		if optBool, ok := opt.(bool); ok {
+			*field = optBool // update value
+		} else {
+			log.Warn().Msgf("%s should be a boolean value, not %T", name, opt)
+			return false
+		}
+	}
+	return true
+}
+
+// same as readMapOptionBool but for strings. once we get generics we can
+// abstract this away ლ(╹◡╹ლ).
+func readMapOptionString(ctxOpts map[string]Any, opts map[Any]Any, field *string, name string, def string) bool {
+	*field = def // assign default
+
+	opt, ok := ctxOpts[name]
+	// override value from context with value from map (when provided).
+	if optVal, optOk := opts[edn.Keyword(name)]; optOk {
+		opt = optVal
+		ok = true
+	}
+	if ok {
+		if optString, ok := opt.(string); ok {
+			*field = optString // update value
+		} else {
+			log.Warn().Msgf("%s should be a boolean value, not %T", name, opt)
+			return false
+		}
+	}
+	return true
 }

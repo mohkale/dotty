@@ -132,7 +132,7 @@ func recursiveBuildDirectivesFromPaths(
 		// it's a map containing perhaps more directories.
 		sMap, ok := arg.(map[Any]Any)
 		if !ok {
-			log.Warn().Str("directive", fmt.Sprintf("%v", arg)).
+			log.Warn().Interface("directive", arg).
 				Msgf("Directive must be a map of symbols to options, not %T", arg)
 			return
 		}

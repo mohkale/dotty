@@ -58,7 +58,7 @@ func dClean(ctx *Context, args AnySlice) {
 					if argBool, ok := arg.(bool); ok {
 						ctx.cleanOpts[opt] = argBool
 					} else {
-						log.Warn().Str("force", fmt.Sprintf("%v", arg)).
+						log.Warn().Interface("force", arg).
 							Msgf("The %s option must be a valid boolean, not %T", edn.Keyword(opt), arg)
 					}
 				}
@@ -71,14 +71,9 @@ func dClean(ctx *Context, args AnySlice) {
 
 // initialise a new directive instanec with options from the Context.
 func (dir *cleanDirective) init(ctx *Context) *cleanDirective {
-	if forceBool, ok := ctx.cleanOpts["force"]; ok {
-		dir.force = forceBool.(bool)
-	}
-
-	if recursiveBool, ok := ctx.cleanOpts["recursive"]; ok {
-		dir.recursive = recursiveBool.(bool)
-	}
-
+	readMapOptionBool(ctx.cleanOpts, nil, &dir.force, "force", false)
+	readMapOptionBool(ctx.cleanOpts, nil, &dir.recursive, "recursive", false)
+	fmt.Fprintln(os.Stderr, dir)
 	return dir
 }
 

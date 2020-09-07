@@ -1,6 +1,5 @@
 package main
 
-import "fmt"
 import "github.com/rs/zerolog/log"
 import "olympos.io/encoding/edn"
 
@@ -70,8 +69,8 @@ func dCondition(ctx *Context, arg Any) bool {
 				}
 				return false
 			default:
-				log.Warn().Str("condition", fmt.Sprintf("%s", modifier)).
-					Msg("unknown condition in when directive")
+				log.Warn().Interface("condition", modifier).
+					Msg("Unknown condition in when directive")
 				return res
 			}
 		} else {

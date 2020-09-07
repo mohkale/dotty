@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	fp "path/filepath"
 
 	"github.com/rs/zerolog/log"
@@ -21,8 +20,8 @@ func tGenBots(dir AnySlice) (AnySlice, error) {
 	}
 
 	if dir[0] != edn.Keyword("import") {
-		log.Fatal().Str("directive", fmt.Sprintf("%s", dir)).
-			Msgf("The gen-bots tag can only be applied to %s directives", edn.Keyword("import"))
+		log.Fatal().Interface("directive", dir).
+			Msg("The gen-bots tag can only be applied to :import directives")
 	}
 
 	newArgs := make(AnySlice, 0, len(dir))
@@ -54,14 +53,14 @@ func tGenBotsMapHandler(onComplete func(Any)) func(string, Any) {
 	return func(base string, arg Any) {
 		argMap, ok := arg.(map[Any]Any)
 		if !ok {
-			log.Fatal().Str("arg", fmt.Sprintf("%s", arg)).
+			log.Fatal().Interface("arg", arg).
 				Msg("Import arguments must be paths, lists of paths or maps containing paths")
 		}
 
 		path, ok := argMap[edn.Keyword("path")]
 		if !ok {
-			log.Warn().Str("arg", fmt.Sprintf("%s", arg)).
-				Msgf("Import maps must specify a %s field", edn.Keyword("path"))
+			log.Warn().Interface("arg", arg).
+				Msg("Import maps must specify a :path field")
 			return
 		}
 
