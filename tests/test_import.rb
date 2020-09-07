@@ -34,6 +34,22 @@ RSpec.describe :import do
     end
   end
 
+  it "can supply path through a map" do
+    import = "foo/bar"
+    path = Pathname.new("foo/bar")
+    msg = rand_str
+    dotty.in_config do
+      path.parent.tap { |p| p.exist? || p.mkdir() }
+      path.open("w") { |io| io.write("((:debug #{msg.inspect}))") }
+      expect(path).to exist
+    end
+
+    dotty_run_script "((:import {:path #{import.inspect}}))" do |_, _, _, serr|
+      # make sure the generated message was printed out
+      expect(serr.read().uncolorize).to match(/DBG #{msg}/)
+    end
+  end
+
   it "doesn't import a directory" do
     target = Pathname.new("foo")
     dotty.in_config { target.mkdir() }
@@ -42,7 +58,7 @@ RSpec.describe :import do
     dotty.run_wait do |_,_,serr,proc|
       err = serr.read()
       expect(proc.to_i).not_to eq(0), err
-      expect(err.uncolorize).to match(/ERR failed to resolve import target/)
+      expect(err.uncolorize).to match(/ERR Failed to resolve import target/)
     end
   ensure
     dotty.cleanup

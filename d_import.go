@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	path "path/filepath"
+	fp "path/filepath"
 
 	"github.com/rs/zerolog/log"
 	"olympos.io/encoding/edn"
@@ -45,53 +45,53 @@ func dImport(ctx *Context, args AnySlice) {
 		return
 	}
 
-	pathChan := make(chan string) // read paths to import into here.
-	go recursiveBuildPath(pathChan, args, "", ctx.eval, func(base string, pathArg Any) {
-		log.Error().
-			Str("arg", fmt.Sprintf("%s", pathArg)).
-			Str("base", base).
-			Str("location", "parse").
-			Msg("Encountered unacceptable type in import declaration")
-		log.Fatal().Msg("Import targets can only be file paths or lists of paths")
-	})
+	recursiveBuildDirectivesFromPaths(ctx, args,
+		func(ctx *Context, filepath string) {
+			file, err := resolveImport(filepath)
+			if err != nil {
+				log.Error().Str("path", filepath).
+					Str("cwd", ctx.cwd).
+					Msg(err.Error())
+				return
+			}
 
-	for filepath := range pathChan {
-		file, err := resolveImport(ctx.cwd, filepath)
-		if err != nil {
-			log.Error().
-				Str("path", filepath).
-				Str("cwd", ctx.cwd).
-				Msg(err.Error())
-			continue
-		}
-
-		log.Info().Str("path", file).Msg("Importing config file")
-		LoadEdnSlice(file, func(conf AnySlice) {
-			DispatchDirectives(ctx.chdir(path.Dir(file)), conf)
-		})
-	}
+			log.Info().Str("path", file).Msg("Importing config file")
+			LoadEdnSlice(file, func(conf AnySlice) {
+				DispatchDirectives(ctx.chdir(fp.Dir(file)), conf)
+			})
+		},
+		func(opts map[Any]Any) (Any, bool) {
+			src, ok := opts[edn.Keyword("path")]
+			return src, ok
+		},
+		func(ctx *Context, opts map[Any]Any) *Context {
+			return ctx
+		},
+	)
 }
 
-// given a cwd and a target import, try to find a file that matches
+// given a target path , try to find a file that matches
 // the lookup rules for an import config and return it.
 //
 // if no file can be found or there was an error while checking for
 // a file, return an error.
-func resolveImport(cwd, target string) (string, error) {
-	log.Debug().Str("cwd", cwd).
-		Str("target", target).
+func resolveImport(target string) (string, error) {
+	directory := fp.Dir(target)
+	basename := fp.Base(target)
+	log.Debug().Str("cwd", directory).
+		Str("target", basename).
 		Msg("Looking for import target")
 
 	targets := []string{
 		// these really should be lazy, but go doesn't really have
 		// a nice way of doing that... maybe channels.
-		joinPath(cwd, target, "dotty.edn"),
-		joinPath(cwd, target+".dotty"),
-		joinPath(cwd, target+".edn"),
-		joinPath(cwd, "."+target+".edn"),
-		joinPath(cwd, "."+target),
-		joinPath(cwd, target, ".config"), // short and sweet
-		joinPath(cwd, target),
+		joinPath(directory, basename, "dotty.edn"),
+		joinPath(directory, basename+".dotty"),
+		joinPath(directory, basename+".edn"),
+		joinPath(directory, "."+basename+".edn"),
+		joinPath(directory, "."+basename),
+		joinPath(directory, basename, ".config"), // short and sweet
+		joinPath(directory, basename),
 	}
 
 	targetFile, err := findExistingFile(targets...)

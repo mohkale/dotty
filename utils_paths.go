@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type recursiveBuildPathErrorCallback = func(base string, arg interface{})
+type recursiveBuildPathErrorCallback = func(base string, arg Any)
 
 /**
  * Recursively build a path from a slice of strings of arbitrary depth.
@@ -94,6 +94,10 @@ func recursiveBuildPath(
 	}
 }
 
+func recursiveBuildPathIdentityPreJoin(a string) (string, bool) {
+	return a, true
+}
+
 /**
  * An abstraction over recursiveBuildPath designed to build directives
  * from sequences of paths.
@@ -129,7 +133,7 @@ func recursiveBuildDirectivesFromPaths(
 		sMap, ok := arg.(map[Any]Any)
 		if !ok {
 			log.Warn().Str("directive", fmt.Sprintf("%v", arg)).
-				Msgf("directive must be a map of symbols to options, not %T", arg)
+				Msgf("Directive must be a map of symbols to options, not %T", arg)
 			return
 		}
 

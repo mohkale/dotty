@@ -1,23 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"testing"
-
-	"olympos.io/encoding/edn"
 )
-
-func pathsFromEdn(data string) []interface{} {
-	var paths []interface{}
-	if edn.Unmarshal([]byte(data), &paths) != nil {
-		panic(fmt.Sprintf("failed to parse edn: %s", data))
-	}
-	return paths
-}
-
-func identStr(a string) (string, bool) {
-	return a, true
-}
 
 /**
  * run recursive build path on data and assert that we get exactly
