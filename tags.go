@@ -15,6 +15,7 @@ func InitTags() {
 		{"if-darwin", tDarwin},
 		{"if-unix", tUnix},
 		{"gen-bots", tGenBots},
+		{"link-gen", tLinkGen},
 	}
 	for _, tag := range tags {
 		if err := edn.AddTagFn("dot/"+tag.name, tag.fun); err != nil {
