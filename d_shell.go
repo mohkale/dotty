@@ -15,6 +15,9 @@ type shellDirective struct {
 	// the you can pass to sh -c.
 	cmd string
 
+	// current working directory in which the command should run
+	cwd string
+
 	// environment variables (of a form compatible with exec.Spawn)
 	env []string
 
@@ -126,6 +129,7 @@ func dShellListCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) boo
 
 func (dir *shellDirective) init(ctx *Context, opts map[Any]Any) *shellDirective {
 	dir.env = ctx.environ()
+	dir.cwd = ctx.cwd
 
 	readMapOptionString(ctx.shellOpts, opts, &dir.desc, "desc", "")
 	readMapOptionBool(ctx.shellOpts, opts, &dir.interactive, "interactive", false)
@@ -145,8 +149,9 @@ func (dir *shellDirective) run() {
 	dir.exec()
 }
 
-func buildCommand(cmdLine []string, env []string, stdin bool, stdout bool, stderr bool) *exec.Cmd {
+func buildCommand(cmdLine []string, cwd string, env []string, stdin bool, stdout bool, stderr bool) *exec.Cmd {
 	cmd := exec.Command(cmdLine[0], cmdLine[1:]...)
+	cmd.Dir = cwd
 	cmd.Env = env
 
 	if stdout {
@@ -164,7 +169,7 @@ func buildCommand(cmdLine []string, env []string, stdin bool, stdout bool, stder
 
 func (dir *shellDirective) exec() bool {
 	cmd := buildCommand([]string{dir.shell, shellExecFlag(dir.shell), dir.cmd},
-		dir.env, dir.stdin, dir.stdout, dir.stderr)
+		dir.cwd, dir.env, dir.stdin, dir.stdout, dir.stderr)
 
 	if dir.desc != "" {
 		log.Info().Msg(dir.desc)

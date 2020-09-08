@@ -15,13 +15,12 @@ type packageDirective struct {
 	// the command line used to install the package
 	cmd []string
 
-	// the environment passed to the package
-	env []string
-
 	managerName string
 	manager     *packageManager
 
 	// these fields are taken from shellDirective and have the same meaning
+	cwd         string
+	env         []string
 	interactive bool
 	stdin       bool
 	stdout      bool
@@ -103,7 +102,7 @@ func dPackage(ctx *Context, args AnySlice) {
 // parse out a single installation target for manager from pkg and dispatch
 // it to ctx.dirChan
 func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName string, pkg Any) {
-	dir := &packageDirective{manager: manager, managerName: managerName}
+	dir := &packageDirective{manager: manager, managerName: managerName, cwd: ctx.cwd}
 
 	// RANT oh god!! MY EYES!!! ヽ(ﾟДﾟ)ﾉ
 	if pkgStr, ok := pkg.(string); ok {
@@ -192,7 +191,7 @@ func (dir *packageDirective) run() {
 			Msg("Running subcommand")
 
 		// for now, just inherit all attributes from the package we're installing
-		cmd := buildCommand(updateCmd, dir.env, dir.stdin, dir.stdout, dir.stderr)
+		cmd := buildCommand(updateCmd, dir.cwd, dir.env, dir.stdin, dir.stdout, dir.stderr)
 		if err := cmd.Run(); err != nil {
 			log.Error().Err(err).
 				Str("manager", dir.managerName).
@@ -213,7 +212,7 @@ func (dir *packageDirective) run() {
 			Msg("Running manual installation command")
 		ok = !dir.manual.exec()
 	} else {
-		cmd := buildCommand(dir.cmd, dir.env, dir.stdin, dir.stdout, dir.stderr)
+		cmd := buildCommand(dir.cmd, dir.cwd, dir.env, dir.stdin, dir.stdout, dir.stderr)
 		log.Debug().Strs("cmd", dir.cmd).
 			Bool("interactive", dir.interactive).
 			Msg("Running installation command")
