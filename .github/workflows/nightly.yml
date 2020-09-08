@@ -1,0 +1,47 @@
+name: deploy nightly
+
+on:
+  # schedule:
+  #   - cron: '0 2 * * *' # run at 2 AM UTC
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: deploy nightly
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.x
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.15
+        id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+      - name: Get dependencies
+        run: go get -v -t -d ./...
+      - name: Build
+        run: make build-release
+      - name: Bundle Releases
+        # because most linuxes have zip, no windows have tar ・゜・(ノД`)
+        run: zip dist.zip dist --move -r
+      - name: Deploy release
+        uses: WebFreak001/deploy-nightly@v1.1.0
+        env:
+           # automatically provided by github actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # see https://api.github.com/repos/mohkale/dotty/releases
+          upload_url: https://uploads.github.com/repos/mohkale/dotty/releases/30937064/assets{?name,label}
+          release_id: 30937064
+          # path to archive to upload, nightly doesn't support multiple files to upload yet.
+          asset_path: ./dist.zip
+          # name to upload the release as, use $$ to insert date (YYYYMMDD) and 6 letter commit hash
+          asset_name: dotty-nightly.zip
+          # required by GitHub API
+          asset_content_type: application/zip
+          # optional, if there are more releases than this matching the
+          # asset_name, the oldest ones are going to be deleted
+          max-releases: 1
