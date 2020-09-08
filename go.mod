@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/drone/envsubst v1.0.2
+	github.com/gojp/goreportcard v0.0.0-20200415071653-59167b516f3f // indirect
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/rs/zerolog v1.19.0
 	github.com/spf13/pflag v1.0.5

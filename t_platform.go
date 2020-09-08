@@ -1,7 +1,7 @@
 package main
 
-func _tPlatform(predicate func() bool) func(AnySlice) (AnySlice, error) {
-	return func(dir AnySlice) (AnySlice, error) {
+func _tPlatform(predicate func() bool) func(anySlice) (anySlice, error) {
+	return func(dir anySlice) (anySlice, error) {
 		if predicate() {
 			return dir, nil
 		}

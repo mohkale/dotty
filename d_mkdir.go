@@ -18,19 +18,19 @@ type mkdirDirective struct {
 	chmod os.FileMode
 }
 
-func dMkdir(ctx *Context, args AnySlice) {
+func dMkdir(ctx *Context, args anySlice) {
 	recursiveBuildDirectivesFromPaths(ctx, args,
 		// complete paths go into the directive channel
 		func(ctx *Context, path string) {
 			ctx.dirChan <- (&mkdirDirective{path: expandTilde(ctx.home, path)}).init(ctx)
 		},
 		// encountered a map, recurse into any further maps.
-		func(opts map[Any]Any) (Any, bool) {
+		func(opts map[any]any) (any, bool) {
 			src, ok := opts[edn.Keyword("path")]
 			return src, ok
 		},
 		// update context.
-		func(ctx *Context, opts map[Any]Any) (*Context, bool) {
+		func(ctx *Context, opts map[any]any) (*Context, bool) {
 			if !directiveMapCondition(ctx, opts) {
 				return ctx, false
 			}

@@ -12,7 +12,7 @@ import (
 	"olympos.io/encoding/edn"
 )
 
-func InitLogger(opts *cli.Options) {
+func initLogger(opts *cli.Options) {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 	var writer io.Writer
@@ -40,18 +40,19 @@ func InitLogger(opts *cli.Options) {
 	zerolog.SetGlobalLevel(zerolog.Level(opts.LogLevel))
 }
 
-type LogErrorHook struct {
+type logErrorHook struct {
 	callback func()
 }
 
-func (h LogErrorHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
+// call h.callback() if this logs level is at least as bad as an error.
+func (h logErrorHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	if level >= zerolog.ErrorLevel {
 		h.callback()
 	}
 }
 
 func startDotty(opts *cli.Options) *Context {
-	ctx := CreateContext()
+	ctx := createContext()
 	ctx.root = opts.RootDir
 	ctx.home = opts.HomeDir
 	ctx.cwd = ctx.root
@@ -77,14 +78,14 @@ func startDotty(opts *cli.Options) *Context {
 			Str("path", env).
 			Msg("Importing environment file")
 
-		LoadEdnSlice(env, func(env AnySlice) {
-			ParseDirective(edn.Keyword("def"), ctx, env)
+		loadEdnSlice(env, func(env anySlice) {
+			parseDirective(edn.Keyword("def"), ctx, env)
 		})
 	}
 
 	go func() {
 		defer close(ctx.dirChan)
-		ParseDirective(edn.Keyword("import"), ctx, AnySlice{"config.edn"})
+		parseDirective(edn.Keyword("import"), ctx, anySlice{"config.edn"})
 	}()
 
 	return ctx
@@ -93,12 +94,12 @@ func startDotty(opts *cli.Options) *Context {
 func main() {
 	cmd, opts := cli.ParseArgs()
 
-	InitLogger(opts)
-	InitDirectives()
-	InitTags()
+	initLogger(opts)
+	initDirectives()
+	initTags()
 
 	// if an error is logged, program exits non-0.
-	ok, errorHook := true, LogErrorHook{}
+	ok, errorHook := true, logErrorHook{}
 	errorHook.callback = func() { ok = false }
 	log.Logger = log.Hook(errorHook)
 
@@ -117,7 +118,7 @@ func main() {
 		}
 	case "list-bots":
 		bots := make(map[string]struct{})
-		dConditionInstallingBots = func(ctx *Context, args AnySlice) bool {
+		dConditionInstallingBots = func(ctx *Context, args anySlice) bool {
 			for _, arg := range args {
 				if argStr, ok := arg.(string); ok {
 					if _, ok := bots[argStr]; !ok {

@@ -39,19 +39,19 @@ type cleanDirective struct {
 /**
  * constructor for cleanDirective.
  */
-func dClean(ctx *Context, args AnySlice) {
+func dClean(ctx *Context, args anySlice) {
 	recursiveBuildDirectivesFromPaths(ctx, args,
 		// create and completed paths as a directive to dirChan
 		func(ctx *Context, path string) {
 			ctx.dirChan <- (&cleanDirective{path: expandTilde(ctx.home, path), root: ctx.root}).init(ctx)
 		},
 		// get new paths from the :path parameter when the argument is a map.
-		func(opts map[Any]Any) (Any, bool) {
+		func(opts map[any]any) (any, bool) {
 			src, ok := opts[edn.Keyword("path")]
 			return src, ok
 		},
 		// update context with opts
-		func(ctx *Context, opts map[Any]Any) (*Context, bool) {
+		func(ctx *Context, opts map[any]any) (*Context, bool) {
 			if !directiveMapCondition(ctx, opts) {
 				return ctx, false
 			}
@@ -93,13 +93,13 @@ func (dir *cleanDirective) log() string {
 
 // RANT go really needs tuple types or offer a nicer way
 // to return multiple values from a function.
-type FileInfoWithPath struct {
+type fileInfoWithPath struct {
 	info os.FileInfo
 	path string
 }
 
 func (dir *cleanDirective) run() {
-	fileCh := make(chan FileInfoWithPath)
+	fileCh := make(chan fileInfoWithPath)
 	go dir.getFiles(fileCh)
 	for file := range fileCh {
 		// we only clean symlinks, not regular files
@@ -115,7 +115,7 @@ func (dir *cleanDirective) run() {
 			continue
 		}
 
-		// make sure the link is relevent to dotty
+		// make sure the link is relevant to dotty
 		if !dir.force && !fileIsRelative(dest, dir.root) {
 			continue
 		}
@@ -138,14 +138,14 @@ func (dir *cleanDirective) run() {
 /**
  * channel the files this directive should consider for cleaning into ch.
  */
-func (dir *cleanDirective) getFiles(ch chan FileInfoWithPath) {
+func (dir *cleanDirective) getFiles(ch chan fileInfoWithPath) {
 	defer close(ch)
 	if dir.recursive {
 		err := fp.Walk(dir.path, func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			ch <- FileInfoWithPath{info, path}
+			ch <- fileInfoWithPath{info, path}
 			return nil
 		})
 		if err != nil {
@@ -160,7 +160,7 @@ func (dir *cleanDirective) getFiles(ch chan FileInfoWithPath) {
 				Msg("Error while listing path")
 		} else {
 			for _, info := range files {
-				ch <- FileInfoWithPath{info, joinPath(dir.path, info.Name())}
+				ch <- fileInfoWithPath{info, joinPath(dir.path, info.Name())}
 			}
 		}
 	}

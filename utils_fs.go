@@ -13,13 +13,13 @@ func _pathExists(path string, extraCheck func(os.FileInfo) bool) (bool, error) {
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
-		} else {
-			errno := err.(*os.PathError).Err.(syscall.Errno)
-			if errno == syscall.ENOTDIR {
-				return false, nil
-			}
-			return false, err
 		}
+
+		errno := err.(*os.PathError).Err.(syscall.Errno)
+		if errno == syscall.ENOTDIR {
+			return false, nil
+		}
+		return false, err
 	}
 	return extraCheck(stat), nil
 }

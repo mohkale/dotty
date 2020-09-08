@@ -5,10 +5,10 @@ import (
 	"olympos.io/encoding/edn"
 )
 
-func InitTags() {
+func initTags() {
 	tags := []struct {
 		name string
-		fun  func(AnySlice) (AnySlice, error)
+		fun  func(anySlice) (anySlice, error)
 	}{
 		{"if-windows", tWindows},
 		{"if-linux", tLinux},

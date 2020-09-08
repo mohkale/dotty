@@ -7,7 +7,7 @@ import (
 
 // generate a directive constructor that logs output to logFunc
 func dLog(logFunc func() *zerolog.Event) directiveConstructor {
-	return func(ctx *Context, args AnySlice) {
+	return func(ctx *Context, args anySlice) {
 		if len(args) == 0 {
 			return
 		}

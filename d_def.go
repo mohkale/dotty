@@ -29,9 +29,9 @@ import (
 // This function has a maximum recursive depth of 1, so there should be little overhead
 // in practice.
 
-// Psuedo directive for assigning options in the current context.
-func dDef(ctx *Context, args AnySlice) {
-	var assignEnvOpt = func(key string, val Any) {
+// Pseudo directive for assigning options in the current context.
+func dDef(ctx *Context, args anySlice) {
+	var assignEnvOpt = func(key string, val any) {
 		valString := fmt.Sprintf("%s", val)
 		log.Debug().Str("key", key).
 			Str("val", valString).
@@ -40,14 +40,14 @@ func dDef(ctx *Context, args AnySlice) {
 		ctx.invalidateEnv()
 	}
 
-	var keyTypeError = func(key Any) {
+	var keyTypeError = func(key any) {
 		log.Warn().Interface("key", key).
 			Msgf(":def keys must be strings, not %T", key)
 	}
 
 	dDefDirectiveOpts(ctx, args, assignEnvOpt,
-		func(key Any) {
-			args, ok := key.(AnySlice)
+		func(key any) {
+			args, ok := key.(anySlice)
 			if !ok {
 				keyTypeError(key)
 				return
@@ -67,7 +67,7 @@ func dDef(ctx *Context, args AnySlice) {
 			if dest == edn.Keyword("env") {
 				dDefDirectiveOpts(ctx, args[1:], assignEnvOpt, keyTypeError)
 			} else if destMap, ok := ctx.optsFromString(string(dest)); ok {
-				dDefDirectiveOpts(ctx, args[1:], func(key string, value Any) {
+				dDefDirectiveOpts(ctx, args[1:], func(key string, value any) {
 					log.Debug().Str("key", key).
 						Str("val", fmt.Sprintf("%s", value)).
 						Str("directive", string(dest)).
@@ -85,7 +85,7 @@ func dDef(ctx *Context, args AnySlice) {
 // helper for dDef which reads each argument for args, if
 // the argument is a string read the next argument as it's
 // value and pass both to callback. Otherwise invoke errHandler.
-func dDefDirectiveOpts(ctx *Context, args AnySlice, callback func(string, Any), errHandler func(Any)) {
+func dDefDirectiveOpts(ctx *Context, args anySlice, callback func(string, any), errHandler func(any)) {
 	for i := 0; i < len(args); i++ {
 		key := args[i]
 		if keyStr, ok := key.(string); ok {

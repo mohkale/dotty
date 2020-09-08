@@ -33,13 +33,13 @@ func (f *csvFlags) Set(arg string) error {
 	return nil
 }
 
-func (i *csvFlags) Type() string {
-	if i.metavar == "" {
+func (f *csvFlags) Type() string {
+	if f.metavar == "" {
 		return "arg"
 	}
-	return i.metavar
+	return f.metavar
 }
 
-func (i *csvFlags) GetValues() []string {
-	return i.values
+func (f *csvFlags) GetValues() []string {
+	return f.values
 }

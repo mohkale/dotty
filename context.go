@@ -7,9 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-/**
- * Store for contextual information in the dotty runtime.
- */
+// Context - store for contextual information in the dotty runtime.
 type Context struct {
 	root string
 	cwd  string
@@ -18,7 +16,7 @@ type Context struct {
 	// It's kept here because the it shouldn't be modifiable.
 	home string
 
-	// The default shell used for subprocesses, this can be overriden.
+	// The default shell used for subprocesses, this can be overridden.
 	// using envOpts.
 	shell string
 
@@ -28,35 +26,35 @@ type Context struct {
 	exceptDirectives []string
 
 	// send parsed directives through here.
-	dirChan chan Directive
+	dirChan chan directive
 
 	// Key/Value options for specific directives or subshell environments.
-	mkdirOpts   map[string]Any
-	linkOpts    map[string]Any
-	cleanOpts   map[string]Any
-	shellOpts   map[string]Any
-	packageOpts map[string]Any
+	mkdirOpts   map[string]any
+	linkOpts    map[string]any
+	cleanOpts   map[string]any
+	shellOpts   map[string]any
+	packageOpts map[string]any
 	envOpts     map[string]string
 
 	// generated environment of the form that exec.Command can accept.
 	_env []string
 }
 
-func CreateContext() *Context {
+func createContext() *Context {
 	return &Context{
 		root:             "",
 		cwd:              "",
 		shell:            "",
 		home:             "",
 		bots:             make([]string, 0),
-		dirChan:          make(chan Directive),
-		mkdirOpts:        make(map[string]Any),
-		linkOpts:         make(map[string]Any),
-		cleanOpts:        make(map[string]Any),
+		dirChan:          make(chan directive),
+		mkdirOpts:        make(map[string]any),
+		linkOpts:         make(map[string]any),
+		cleanOpts:        make(map[string]any),
 		onlyDirectives:   make([]string, 0),
 		exceptDirectives: make([]string, 0),
-		shellOpts:        make(map[string]Any),
-		packageOpts:      make(map[string]Any),
+		shellOpts:        make(map[string]any),
+		packageOpts:      make(map[string]any),
 		envOpts:          make(map[string]string),
 		_env:             nil,
 	}
@@ -65,7 +63,7 @@ func CreateContext() *Context {
 /**
  * Get options map for the directive associated with key.
  */
-func (ctx *Context) optsFromString(key string) (map[string]Any, bool) {
+func (ctx *Context) optsFromString(key string) (map[string]any, bool) {
 	switch {
 	case key == "mkdirs":
 		fallthrough
@@ -86,7 +84,7 @@ func (ctx *Context) optsFromString(key string) (map[string]Any, bool) {
 	return nil, false
 }
 
-func _cloneDirectiveOpts(src map[string]Any, dest map[string]Any) {
+func _cloneDirectiveOpts(src map[string]any, dest map[string]any) {
 	for key, value := range src {
 		dest[key] = value
 	}
@@ -99,7 +97,7 @@ func _cloneDirectiveOpts(src map[string]Any, dest map[string]Any) {
  * intended to be shared across all context instances.
  */
 func (ctx *Context) clone() *Context {
-	clone := CreateContext()
+	clone := createContext()
 	// basic types so they're auto immutable
 	clone.root = ctx.root
 	clone.cwd = ctx.cwd

@@ -38,15 +38,15 @@ type packageDirective struct {
 	after *shellDirective
 }
 
-func dPackageDefaultHandler(ctx *Context, args AnySlice) {
+func dPackageDefaultHandler(ctx *Context, args anySlice) {
 	log.Warn().
 		Msgf("No package manager found, running default clause.")
 	dShell(ctx, args)
 }
 
-func dPackage(ctx *Context, args AnySlice) {
+func dPackage(ctx *Context, args anySlice) {
 	for _, arg := range args {
-		argSlice, ok := arg.(AnySlice)
+		argSlice, ok := arg.(anySlice)
 
 		if !ok {
 			log.Warn().Interface("arg", arg).
@@ -101,7 +101,7 @@ func dPackage(ctx *Context, args AnySlice) {
 
 // parse out a single installation target for manager from pkg and dispatch
 // it to ctx.dirChan
-func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName string, pkg Any) {
+func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName string, pkg any) {
 	dir := &packageDirective{manager: manager, managerName: managerName, cwd: ctx.cwd}
 
 	// RANT oh god!! MY EYES!!! ヽ(ﾟДﾟ)ﾉ
@@ -114,7 +114,7 @@ func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName s
 		return
 	}
 
-	pkgMap, ok := pkg.(map[Any]Any)
+	pkgMap, ok := pkg.(map[any]any)
 	if !ok {
 		log.Warn().Msgf("%s targets must be strings or a map containing a %s option, not %T",
 			edn.Keyword("package"), edn.Keyword("pkg"), pkg)
@@ -144,12 +144,10 @@ func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName s
 		log.Error().Interface("command", manualCmd).
 			Msg("Failed to construct manual command for package installation")
 		return
-	} else {
-		var cmdLine []string
-		if cmdLine, ok = manager.build(manager.execPath, pkgStr, pkgMap); !ok {
-			return
-		}
-		dir.cmd = cmdLine
+	}
+
+	if dir.cmd, ok = manager.build(manager.execPath, pkgStr, pkgMap); !ok {
+		return
 	}
 
 	if before, ok := pkgMap[edn.Keyword("before")]; ok &&
@@ -169,7 +167,7 @@ func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName s
 	ctx.dirChan <- dir.init(ctx, pkgMap)
 }
 
-func (dir *packageDirective) init(ctx *Context, opts map[Any]Any) *packageDirective {
+func (dir *packageDirective) init(ctx *Context, opts map[any]any) *packageDirective {
 	dir.env = ctx.environ()
 	readMapOptionBool(ctx.packageOpts, opts, &dir.interactive, "interactive", false)
 	readMapOptionBool(ctx.packageOpts, opts, &dir.stdin, "stdin", dir.interactive)

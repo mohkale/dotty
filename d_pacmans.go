@@ -11,7 +11,7 @@ import (
 
 type packageManager struct {
 	// try to install pkg with options
-	build func(binPath, pkg string, options map[Any]Any) ([]string, bool)
+	build func(binPath, pkg string, options map[any]any) ([]string, bool)
 
 	// check for whether this package manager exists
 	exists func() string
@@ -19,7 +19,7 @@ type packageManager struct {
 	// cache so you don't have to keep checking
 	execPath string
 
-	// this package manager requires elevated user priviliges.
+	// this package manager requires elevated user privileges.
 	sudo bool
 
 	update func(binPath string) []string
@@ -31,14 +31,15 @@ type packageManager struct {
 
 func findPackageManagerPath(names ...string) string {
 	for _, name := range names {
-		if path, err := exec.LookPath(name); err != nil {
+		path, err := exec.LookPath(name)
+		if err != nil {
 			// log.Error().Str("executable", name).
 			// 	Str("error", err.Error()).
 			// 	Msg("Error when checking for executable")
 			return ""
-		} else {
-			return path
 		}
+
+		return path
 	}
 
 	return ""
@@ -60,10 +61,10 @@ func sudoValidate() bool {
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
 			log.Error().Int("code", exitErr.ExitCode()).
-				Msg("Failed to elevate user privilages")
+				Msg("Failed to elevate user privileges")
 		} else {
 			log.Error().Err(err).
-				Msg("Failed to elevate user privilages")
+				Msg("Failed to elevate user privileges")
 		}
 		return false
 	}
@@ -87,7 +88,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 		exists: func() string {
 			return findPackageManagerPath("pip", "pip3")
 		},
-		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+		build: func(binPath, pkg string, opts map[any]any) ([]string, bool) {
 			cmd := []string{binPath, "install"}
 
 			// extract global installation option
@@ -103,7 +104,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 				var user, host string
 				if user, ok = git.(string); ok {
 					host = "github"
-				} else if gitMap, ok := git.(map[Any]Any); ok {
+				} else if gitMap, ok := git.(map[any]any); ok {
 					if !readMapOptionString(nil, gitMap, &user, "user", "") ||
 						!readMapOptionString(nil, gitMap, &host, "host", "") {
 						log.Error().Str("package", pkg).
@@ -132,7 +133,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 		exists: func() string {
 			return findPackageManagerPath("go")
 		},
-		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+		build: func(binPath, pkg string, opts map[any]any) ([]string, bool) {
 			return []string{binPath, "get", pkg}, true
 		},
 	},
@@ -143,7 +144,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 		exists: func() string {
 			return findPackageManagerPath("cyg-get.bat")
 		},
-		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+		build: func(binPath, pkg string, opts map[any]any) ([]string, bool) {
 			return []string{binPath, pkg}, true
 		},
 	},
@@ -157,7 +158,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 		exists: func() string {
 			return findPackageManagerPath("gem")
 		},
-		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+		build: func(binPath, pkg string, opts map[any]any) ([]string, bool) {
 			cmd := []string{binPath, "install"}
 
 			// extract global installation option
@@ -179,7 +180,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 		exists: func() string {
 			return findPackageManagerPath("choco")
 		},
-		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+		build: func(binPath, pkg string, opts map[any]any) ([]string, bool) {
 			return []string{binPath, "install", "--yes", pkg}, true
 		},
 	},
@@ -194,7 +195,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 		exists: func() string {
 			return findPackageManagerPath("apt")
 		},
-		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+		build: func(binPath, pkg string, opts map[any]any) ([]string, bool) {
 			return []string{"sudo", binPath, "install", "--yes", pkg}, true
 		},
 		update: func(binPath string) []string {
@@ -213,7 +214,7 @@ func pacmanPackageManager(sudo bool, filenames ...string) *packageManager {
 		exists: func() string {
 			return findPackageManagerPath(filenames...)
 		},
-		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+		build: func(binPath, pkg string, opts map[any]any) ([]string, bool) {
 			cmd := []string{binPath, "-S", "--needed", "--noconfirm", pkg}
 
 			if sudo {

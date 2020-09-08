@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type recursiveBuildPathErrorCallback = func(base string, arg Any)
+type recursiveBuildPathErrorCallback = func(base string, arg any)
 
 /**
  * Recursively build a path from a slice of strings of arbitrary depth.
@@ -44,14 +44,14 @@ type recursiveBuildPathErrorCallback = func(base string, arg Any)
  */
 func recursiveBuildPath(
 	ch chan string,
-	paths AnySlice,
+	paths anySlice,
 	base string,
 	preJoin func(string) (string, bool),
 	err recursiveBuildPathErrorCallback,
 ) {
 	defer close(ch)
-	var recursiveDo func(paths AnySlice, base string)
-	recursiveDo = func(paths AnySlice, base string) {
+	var recursiveDo func(paths anySlice, base string)
+	recursiveDo = func(paths anySlice, base string) {
 		lastRecurse := 0
 		i, currentPaths := 0, make([]string, len(paths))
 
@@ -65,7 +65,7 @@ func recursiveBuildPath(
 					currentPaths[i] = joinPath(base, pathStr)
 					i++
 				}
-			} else if pathSlice, ok := path.(AnySlice); ok {
+			} else if pathSlice, ok := path.(anySlice); ok {
 				for j, dir := range currentPaths {
 					if j < i {
 						recursiveDo(pathSlice, dir)
@@ -86,7 +86,7 @@ func recursiveBuildPath(
 			if pathStr, ok := preJoin(pathStr); ok {
 				ch <- joinPath(base, pathStr)
 			}
-		} else if pathSlice, ok := path.(AnySlice); ok {
+		} else if pathSlice, ok := path.(anySlice); ok {
 			recursiveDo(pathSlice, base)
 		} else {
 			err(base, path)
@@ -114,10 +114,10 @@ func recursiveBuildPathIdentityPreJoin(a string) (string, bool) {
  * TODO add test coverage
  */
 func recursiveBuildDirectivesFromPaths(
-	ctx *Context, args AnySlice,
+	ctx *Context, args anySlice,
 	pathCompleteCallback func(ctx *Context, p string),
-	getSrcsFromOpts func(opts map[Any]Any) (Any, bool),
-	updateContext func(ctx *Context, opts map[Any]Any) (*Context, bool),
+	getSrcsFromOpts func(opts map[any]any) (any, bool),
+	updateContext func(ctx *Context, opts map[any]any) (*Context, bool),
 ) {
 	pathCh, done := make(chan string), make(chan struct{})
 	go func() {
@@ -127,10 +127,10 @@ func recursiveBuildDirectivesFromPaths(
 		done <- struct{}{}
 	}()
 
-	go recursiveBuildPath(pathCh, args, ctx.cwd, ctx.eval, func(base string, arg Any) {
+	go recursiveBuildPath(pathCh, args, ctx.cwd, ctx.eval, func(base string, arg any) {
 		// the only situation in which the input can not be a path is when
 		// it's a map containing perhaps more directories.
-		sMap, ok := arg.(map[Any]Any)
+		sMap, ok := arg.(map[any]any)
 		if !ok {
 			log.Warn().Interface("directive", arg).
 				Msgf("Directive must be a map of symbols to options, not %T", arg)
@@ -143,10 +143,10 @@ func recursiveBuildDirectivesFromPaths(
 				return
 			}
 			if srcStr, ok := src.(string); ok {
-				src = AnySlice{srcStr}
+				src = anySlice{srcStr}
 			}
 
-			if srcSlice, ok := src.(AnySlice); ok {
+			if srcSlice, ok := src.(anySlice); ok {
 				recursiveBuildDirectivesFromPaths(newCtx, srcSlice,
 					pathCompleteCallback, getSrcsFromOpts, updateContext)
 			} else {
@@ -214,10 +214,10 @@ func expandTilde(homeDir, path string) string {
  * though the two paths may actually be relative.
  */
 func fileIsRelative(basepath, targPath string) bool {
-	if res, err := fp.Rel(targPath, basepath); err != nil {
-		// can't be made relative so they aren't relative to each other.
-		return false
-	} else {
+	if res, err := fp.Rel(targPath, basepath); err == nil {
 		return !strings.HasPrefix(res, ".."+string(fp.Separator))
 	}
+
+	// can't be made relative so they aren't relative to each other.
+	return false
 }

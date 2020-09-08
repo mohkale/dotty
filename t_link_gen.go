@@ -9,14 +9,14 @@ import (
 )
 
 // generate a destination path from a src path
-func tLinkGenGetDest(src Any) (Any, bool) {
+func tLinkGenGetDest(src any) (any, bool) {
 	if srcStr, ok := src.(string); ok {
 		dest := fs.Base(srcStr)
 		if dest[0] != '.' {
 			dest = "." + dest
 		}
 		return joinPath("~", dest), true
-	} else if _, ok := src.(AnySlice); ok {
+	} else if _, ok := src.(anySlice); ok {
 		return "~", true
 	}
 
@@ -26,7 +26,7 @@ func tLinkGenGetDest(src Any) (Any, bool) {
 }
 
 // generate a src path from a destination path
-func tLinkGenGetSrc(dest Any) (Any, bool) {
+func tLinkGenGetSrc(dest any) (any, bool) {
 	if srcStr, ok := dest.(string); ok {
 		src := fs.Base(srcStr)
 		if src[0] == '.' {
@@ -92,7 +92,7 @@ func tLinkGenGetSrc(dest Any) (Any, bool) {
 //        {:src "local_file/bar"
 //         :dest "~/.bar"})
 //
-func tLinkGen(args AnySlice) (AnySlice, error) {
+func tLinkGen(args anySlice) (anySlice, error) {
 	if len(args) == 0 {
 		return args, nil
 	}
@@ -102,11 +102,11 @@ func tLinkGen(args AnySlice) (AnySlice, error) {
 			Msgf("The link-gen tag can only be applied to %s directives", edn.Keyword("link"))
 	}
 
-	newArgs := make(AnySlice, 0, len(args))
+	newArgs := make(anySlice, 0, len(args))
 	newArgs = append(newArgs, edn.Keyword("link"))
 
 	for _, path := range args[1:] {
-		if pathMap, ok := path.(map[Any]Any); ok {
+		if pathMap, ok := path.(map[any]any); ok {
 			src, srcOk := pathMap[edn.Keyword("src")]
 			dest, destOk := pathMap[edn.Keyword("dest")]
 			if !srcOk && !destOk {
@@ -132,7 +132,7 @@ func tLinkGen(args AnySlice) (AnySlice, error) {
 			}
 
 			newArgs = append(newArgs, pathMap)
-		} else if paths, ok := dLinkGeneratePaths(&Context{}, AnySlice{path}, "dest"); ok {
+		} else if paths, ok := dLinkGeneratePaths(&Context{}, anySlice{path}, "dest"); ok {
 			for _, dest := range paths {
 				if src, ok := tLinkGenGetSrc(dest); ok {
 					newArgs = append(newArgs, src)

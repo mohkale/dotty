@@ -51,7 +51,7 @@ func TestDestFromSrc_FilesAreMovedToHomeWithHiddenPrefix(t *testing.T) {
 }
 
 func TestDestFromSrc_CollectionsAreMovedToHome(t *testing.T) {
-	paths := AnySlice{"foo", "bar", "baz"}
+	paths := anySlice{"foo", "bar", "baz"}
 	dest, ok := tLinkGenGetDest(paths)
 	if !ok {
 		t.Errorf("get-dest returned not ok with paths: %s", paths)

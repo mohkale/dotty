@@ -45,7 +45,7 @@ type shellDirective struct {
 	stderr bool
 }
 
-func dShell(ctx *Context, args AnySlice) {
+func dShell(ctx *Context, args anySlice) {
 	callback := func(dir *shellDirective) {
 		ctx.dirChan <- dir
 	}
@@ -56,12 +56,11 @@ func dShell(ctx *Context, args AnySlice) {
 
 type dShellPreparedCallback = func(dir *shellDirective)
 
-func dShellCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) bool {
-	if opts, ok := cmd.(map[Any]Any); ok {
+func dShellCommand(ctx *Context, cmd any, onDone dShellPreparedCallback) bool {
+	if opts, ok := cmd.(map[any]any); ok {
 		return dShellMappedCommand(ctx, opts, onDone)
-	} else {
-		return dShellListCommand(ctx, cmd, onDone)
 	}
+	return dShellListCommand(ctx, cmd, onDone)
 }
 
 /**
@@ -70,7 +69,7 @@ func dShellCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) bool {
  * own function because you can't recursively change the options for
  * a command line after part of it has already been provided.
  */
-func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCallback) bool {
+func dShellMappedCommand(ctx *Context, opts map[any]any, onDone dShellPreparedCallback) bool {
 	if !directiveMapCondition(ctx, opts) {
 		return false
 	}
@@ -85,19 +84,19 @@ func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCa
 	if cmdStr, ok := cmd.(string); ok {
 		onDone((&shellDirective{cmd: cmdStr, shell: ctx.shell}).init(ctx, opts))
 		return true
-	} else {
-		newCtx := ctx.clone()
-		for key, val := range opts {
-			key, ok := key.(edn.Keyword)
-			if key == "cmd" || !ok {
-				continue
-			}
+	}
 
-			newCtx.shellOpts[string(key)] = val
+	newCtx := ctx.clone()
+	for key, val := range opts {
+		key, ok := key.(edn.Keyword)
+		if key == "cmd" || !ok {
+			continue
 		}
 
-		return dShellListCommand(newCtx, cmd, onDone)
+		newCtx.shellOpts[string(key)] = val
 	}
+
+	return dShellListCommand(newCtx, cmd, onDone)
 }
 
 /**
@@ -106,8 +105,8 @@ func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCa
  * been abstracted into its own function because you can't recursively
  * build a command line... YET :grin:.
  */
-func dShellListCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) bool {
-	if cmdSlice, ok := cmd.(AnySlice); ok {
+func dShellListCommand(ctx *Context, cmd any, onDone dShellPreparedCallback) bool {
+	if cmdSlice, ok := cmd.(anySlice); ok {
 		var cmd string
 		for i, line := range cmdSlice {
 			if lineStr, ok := line.(string); ok {
@@ -132,7 +131,7 @@ func dShellListCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) boo
 	return true
 }
 
-func (dir *shellDirective) init(ctx *Context, opts map[Any]Any) *shellDirective {
+func (dir *shellDirective) init(ctx *Context, opts map[any]any) *shellDirective {
 	dir.env = ctx.environ()
 	dir.cwd = ctx.cwd
 

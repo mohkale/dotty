@@ -7,29 +7,24 @@ import (
 	"olympos.io/encoding/edn"
 )
 
-type Any = interface{}
-type AnySlice = []Any
+type any = interface{}
+type anySlice = []any
 
-/**
- * Represents a single action that dotty can perform.
- * This can involve linking a file, making a directory, etc.
- */
-type Directive interface {
-	/** run directive */
+// Represents a single action that dotty can perform.
+// This can involve linking a file, making a directory, etc.
+type directive interface {
+	// run directive
 	run()
 
-	/**
-	 * print directive in human readable form as a series
-	 * of actions that the directive will run.
-	 */
+	// print directive in human readable
 	log() string
 }
 
-type directiveConstructor = func(ctx *Context, args AnySlice)
+type directiveConstructor = func(ctx *Context, args anySlice)
 
 var directives map[edn.Keyword]directiveConstructor
 
-func InitDirectives() {
+func initDirectives() {
 	directives = map[edn.Keyword]directiveConstructor{
 		edn.Keyword("import"):   dImport,
 		edn.Keyword("mkdir"):    dMkdir,
@@ -52,7 +47,7 @@ func InitDirectives() {
  * find the directive constructor associated with directive and initialise
  * it with the given arguments and context.
  */
-func ParseDirective(directive edn.Keyword, ctx *Context, args AnySlice) {
+func parseDirective(directive edn.Keyword, ctx *Context, args anySlice) {
 	if init, ok := directives[directive]; ok {
 		init(ctx, args)
 	} else {
@@ -66,9 +61,9 @@ func ParseDirective(directive edn.Keyword, ctx *Context, args AnySlice) {
  * Given a list of directives of the same form as a dotty config file,
  * evaluate the parse out each directive and pass it to ParseDirective.
  */
-func DispatchDirectives(ctx *Context, directives AnySlice) {
+func dispatchDirectives(ctx *Context, directives anySlice) {
 	for i, directive := range directives {
-		dir, ok := directive.(AnySlice)
+		dir, ok := directive.(anySlice)
 		if !ok {
 			log.Error().Str("arg", fmt.Sprintf("%v", directive)).
 				Msgf("Directives must be a list, not %T", directive)
@@ -84,7 +79,7 @@ func DispatchDirectives(ctx *Context, directives AnySlice) {
 		dirKey, args := dir[0], dir[1:]
 		if dirKey, ok := dirKey.(edn.Keyword); ok {
 			if !ctx.skipDirectivePredicate(string(dirKey)) {
-				ParseDirective(dirKey, ctx, args)
+				parseDirective(dirKey, ctx, args)
 			}
 		} else {
 			log.Warn().Int("index", i+1).
@@ -104,12 +99,12 @@ func DispatchDirectives(ctx *Context, directives AnySlice) {
 // opts can also include a :if-bots directive which is just a shortcut
 // for `:when (:bots ARGS)`, because that's most likely what this is
 // going to be used for.
-func directiveMapCondition(ctx *Context, opts map[Any]Any) bool {
+func directiveMapCondition(ctx *Context, opts map[any]any) bool {
 	res := true
 	if bots, ok := opts[edn.Keyword("if-bots")]; ok {
 		if botsStr, ok := bots.(string); ok {
-			res = dConditionInstallingBots(ctx, AnySlice{botsStr})
-		} else if botsSlice, ok := bots.(AnySlice); ok {
+			res = dConditionInstallingBots(ctx, anySlice{botsStr})
+		} else if botsSlice, ok := bots.(anySlice); ok {
 			res = dConditionInstallingBots(ctx, botsSlice)
 		} else {
 			res = false
@@ -125,7 +120,7 @@ func directiveMapCondition(ctx *Context, opts map[Any]Any) bool {
 
 // read the boolean value name from ctx or opts into field, assigning a
 // default value of def.
-func readMapOptionBool(ctxOpts map[string]Any, opts map[Any]Any, field *bool, name string, def bool) bool {
+func readMapOptionBool(ctxOpts map[string]any, opts map[any]any, field *bool, name string, def bool) bool {
 	*field = def // assign default
 
 	opt, ok := ctxOpts[name]
@@ -147,7 +142,7 @@ func readMapOptionBool(ctxOpts map[string]Any, opts map[Any]Any, field *bool, na
 
 // same as readMapOptionBool but for strings. once we get generics we can
 // abstract this away ლ(╹◡╹ლ).
-func readMapOptionString(ctxOpts map[string]Any, opts map[Any]Any, field *string, name string, def string) bool {
+func readMapOptionString(ctxOpts map[string]any, opts map[any]any, field *string, name string, def string) bool {
 	*field = def // assign default
 
 	opt, ok := ctxOpts[name]

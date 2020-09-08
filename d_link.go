@@ -38,19 +38,19 @@ type linkDirective struct {
 // generate the paths for a link (src or dest) from arg.
 //
 // NOTE we can't use recursiveBuildDirectivesFromPaths because srcs
-// and destinations aren't grouped into a single arg. Their seperated
+// and destinations aren't grouped into a single arg. Their separated
 // as "src" then "dest" which can appear as many times as desired.
 //
 // logTitle is used to let include which path type (src or dest) we're
 // building in the logging output.
-func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool) {
+func dLinkGeneratePaths(ctx *Context, arg any, logTitle string) ([]string, bool) {
 	if str, ok := arg.(string); ok {
 		if str, ok = ctx.eval(str); ok {
 			return []string{joinPath(ctx.cwd, str)}, true
 		}
-	} else if slice, ok := arg.(AnySlice); ok {
+	} else if slice, ok := arg.(anySlice); ok {
 		ch, paths := make(chan string), make([]string, 0)
-		go recursiveBuildPath(ch, slice, ctx.cwd, ctx.eval, func(_ string, arg Any) {
+		go recursiveBuildPath(ch, slice, ctx.cwd, ctx.eval, func(_ string, arg any) {
 			log.Fatal().Interface("spec", arg).
 				Interface("path", arg).
 				Msgf("Link paths must be a string or a list of strings, not %T", arg)
@@ -67,12 +67,12 @@ func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool)
 }
 
 // constructor for linkDirective
-func dLink(ctx *Context, args AnySlice) {
+func dLink(ctx *Context, args anySlice) {
 LoopStart:
 	for i := 0; i < len(args); i++ {
 		path := args[i]
 
-		if pathMap, ok := path.(map[Any]Any); ok {
+		if pathMap, ok := path.(map[any]any); ok {
 			if !directiveMapCondition(ctx, pathMap) {
 				continue
 			}
@@ -129,7 +129,7 @@ LoopStart:
 /**
  * populate directive defaults from either the context or current options.
  */
-func (dir *linkDirective) init(ctx *Context, opts map[Any]Any) *linkDirective {
+func (dir *linkDirective) init(ctx *Context, opts map[any]any) *linkDirective {
 	for _, slice := range [][]string{dir.src, dir.dest} {
 		for i := range slice {
 			slice[i] = expandTilde(ctx.home, slice[i])
@@ -285,9 +285,9 @@ func (dir *linkDirective) run() {
 func (dir *linkDirective) linker() func(string, string) error {
 	if dir.symbolic {
 		return os.Symlink
-	} else {
-		return os.Link
 	}
+
+	return os.Link
 }
 
 // pass list of files to be linked from the sources for this

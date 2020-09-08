@@ -3,21 +3,21 @@ package main
 import "github.com/rs/zerolog/log"
 import "olympos.io/encoding/edn"
 
-func dWhen(ctx *Context, args AnySlice) {
+func dWhen(ctx *Context, args anySlice) {
 	if len(args) <= 1 {
 		log.Warn().Msgf("Encountered %s directive with no body", edn.Keyword("when"))
 		return
 	}
 
 	if dCondition(ctx, args[0]) {
-		DispatchDirectives(ctx, args[1:])
+		dispatchDirectives(ctx, args[1:])
 	}
 }
 
 // makes conditional subcommands silent (they don't output anything) by default.
 var dConditionDefaultCmdOpts = map[string]bool{"interactive": false, "quiet": true}
 
-func dConditionPrepareCmd(opts map[Any]Any) map[Any]Any {
+func dConditionPrepareCmd(opts map[any]any) map[any]any {
 	for key, value := range dConditionDefaultCmdOpts {
 		if _, ok := opts[edn.Keyword(key)]; !ok {
 			opts[edn.Keyword(key)] = value
@@ -37,13 +37,13 @@ func dConditionPrepareCmd(opts map[Any]Any) map[Any]Any {
  *  An assertion, such as we're installing this bot:
  *   (:bot "git")
  */
-func dCondition(ctx *Context, arg Any) bool {
+func dCondition(ctx *Context, arg any) bool {
 	res := false
 	assignRes := func(dir *shellDirective) { res = dir.exec() }
 
-	if cmdOpts, ok := arg.(map[Any]Any); ok {
+	if cmdOpts, ok := arg.(map[any]any); ok {
 		dShellMappedCommand(ctx, dConditionPrepareCmd(cmdOpts), assignRes)
-	} else if cmdSlice, ok := arg.(AnySlice); ok {
+	} else if cmdSlice, ok := arg.(anySlice); ok {
 		if len(cmdSlice) == 0 {
 			return false
 		}
@@ -76,16 +76,16 @@ func dCondition(ctx *Context, arg Any) bool {
 				return res
 			}
 		} else {
-			dShellMappedCommand(ctx, dConditionPrepareCmd(map[Any]Any{edn.Keyword("cmd"): cmdSlice}), assignRes)
+			dShellMappedCommand(ctx, dConditionPrepareCmd(map[any]any{edn.Keyword("cmd"): cmdSlice}), assignRes)
 		}
 	} else {
-		dShellMappedCommand(ctx, dConditionPrepareCmd(map[Any]Any{edn.Keyword("cmd"): arg}), assignRes)
+		dShellMappedCommand(ctx, dConditionPrepareCmd(map[any]any{edn.Keyword("cmd"): arg}), assignRes)
 	}
 
 	return res
 }
 
-var dConditionInstallingBots = func(ctx *Context, args AnySlice) bool {
+var dConditionInstallingBots = func(ctx *Context, args anySlice) bool {
 	if len(args) == 0 {
 		return false
 	}

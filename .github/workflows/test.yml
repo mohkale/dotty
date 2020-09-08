@@ -35,6 +35,9 @@ jobs:
       - name: Run Tests
         working-directory: ${{env.working-directory}}
         run: bundle exec rspec --profile -P 'test_*.rb'
+      - name: Lint
+        working-directory: ${{env.working-directory}}
+        run: bundle exec rubocop
 
   golang:
     name: Go
@@ -52,3 +55,10 @@ jobs:
           go get -v -t -d ./...
       - name: Test
         run: go test -v .
+      - name: Lint
+        run: |
+          # install [[https://github.com/alecthomas/gometalinter][gometalinter]] first.
+          curl -L https://git.io/vp6lP | sh
+          PATH="$PATH:./bin/"
+          go get github.com/gojp/goreportcard/cmd/goreportcard-cli
+          goreportcard-cli -v -t 85

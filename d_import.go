@@ -12,7 +12,7 @@ import (
 
 // load an edn slice of directives from the file at fpath and pass the
 // result to callback.
-func LoadEdnSlice(fpath string, callback func(AnySlice)) {
+func loadEdnSlice(fpath string, callback func(anySlice)) {
 	fd, err := os.Open(fpath)
 	if err != nil {
 		log.Fatal().Str("path", fpath).
@@ -28,7 +28,7 @@ func LoadEdnSlice(fpath string, callback func(AnySlice)) {
 			Msg("Failed to read from file")
 	}
 
-	var conf AnySlice
+	var conf anySlice
 	if err := edn.Unmarshal(iStream, &conf); err != nil {
 		log.Fatal().Str("path", fpath).
 			Str("err", err.Error()).
@@ -38,8 +38,8 @@ func LoadEdnSlice(fpath string, callback func(AnySlice)) {
 	callback(conf)
 }
 
-// psuedo directive to import (one or more) configuration files.
-func dImport(ctx *Context, args AnySlice) {
+// pseudo directive to import (one or more) configuration files.
+func dImport(ctx *Context, args anySlice) {
 	if len(args) == 0 {
 		log.Warn().Msg("Tried to import with no files")
 		return
@@ -56,15 +56,15 @@ func dImport(ctx *Context, args AnySlice) {
 			}
 
 			log.Info().Str("path", file).Msg("Importing config file")
-			LoadEdnSlice(file, func(conf AnySlice) {
-				DispatchDirectives(ctx.chdir(fp.Dir(file)), conf)
+			loadEdnSlice(file, func(conf anySlice) {
+				dispatchDirectives(ctx.chdir(fp.Dir(file)), conf)
 			})
 		},
-		func(opts map[Any]Any) (Any, bool) {
+		func(opts map[any]any) (any, bool) {
 			src, ok := opts[edn.Keyword("path")]
 			return src, ok
 		},
-		func(ctx *Context, opts map[Any]Any) (*Context, bool) {
+		func(ctx *Context, opts map[any]any) (*Context, bool) {
 			if !directiveMapCondition(ctx, opts) {
 				return ctx, false
 			}
@@ -102,9 +102,9 @@ func resolveImport(target string) (string, error) {
 	if err != nil {
 		if isNoExistingFile(err) {
 			return "", fmt.Errorf("Failed to resolve import target")
-		} else {
-			return "", err
 		}
+
+		return "", err
 	}
 
 	return targetFile, err

@@ -12,12 +12,17 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
+// PROG_NAME The name of this program
 var PROG_NAME = "dotty"
-var PROG_VERSION = "0.0.0"
-var USAGE = fmt.Sprintf(`
+
+// The version of this program
+var progVersion = "0.0.0"
+
+var usage = fmt.Sprintf(`
 %s is the delightfully lispy dotfile manager.
 `, PROG_NAME)
 
+// Options - store for parsed command line option data
 type Options struct {
 	LogLevel         loggingLevel
 	LogFile          string
@@ -82,19 +87,19 @@ var subCommands = map[string]struct {
 	},
 	"inspect": {
 		"print actions in human readable form",
-		generateSubcommand("", func(set *flag.FlagSet, opts *Options) {
+		generateSubcommand("inspect", func(set *flag.FlagSet, opts *Options) {
 			sharedInstallationOpts(set, opts)
 			sharedConfigurationOpts(set, opts)
 		}),
 	},
 	"list-dirs": {
 		"list all directives known to dotty",
-		generateSubcommand("", func(set *flag.FlagSet, opts *Options) {
+		generateSubcommand("list-dirs", func(set *flag.FlagSet, opts *Options) {
 		}),
 	},
 	"list-bots": {
 		"list all bots in all imports from your root import",
-		generateSubcommand("", func(set *flag.FlagSet, opts *Options) {
+		generateSubcommand("list-bots", func(set *flag.FlagSet, opts *Options) {
 			sharedConfigurationOpts(set, opts)
 		}),
 	},
@@ -116,7 +121,7 @@ func rootFlagSet(opts *Options) *flag.FlagSet {
 
 	set.Usage = func() {
 		fmt.Fprintf(os.Stderr, "usage: %s <OPTIONS> {%s}\n", PROG_NAME, strings.Join(subCommandKeys(), ","))
-		fmt.Fprintln(os.Stderr, USAGE)
+		fmt.Fprintln(os.Stderr, usage)
 		fmt.Fprintln(os.Stderr, "Subcommands:")
 		for sub, spec := range subCommands {
 			fmt.Fprintf(os.Stderr, "  %s - %s\n", sub, spec.description)
@@ -125,7 +130,7 @@ func rootFlagSet(opts *Options) *flag.FlagSet {
 		fmt.Fprintln(os.Stderr, "Options:")
 		set.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
-		fmt.Fprintf(os.Stderr, "%s, version %s\n", PROG_NAME, PROG_VERSION)
+		fmt.Fprintf(os.Stderr, "%s, version %s\n", PROG_NAME, progVersion)
 	}
 
 	set.SetInterspersed(false)
@@ -136,6 +141,8 @@ func rootFlagSet(opts *Options) *flag.FlagSet {
 	return set
 }
 
+// ParseArgs parse command line arguments into a command
+// to execute and an options struct.
 func ParseArgs() (string, *Options) {
 	opts := (&Options{}).init()
 	root := rootFlagSet(opts)

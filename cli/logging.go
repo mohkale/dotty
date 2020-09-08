@@ -32,18 +32,18 @@ func (level *loggingLevel) Set(arg string) error {
 	if newLevel, ok := loggingLevels[strings.ToLower(arg)]; ok {
 		*level = newLevel
 		return nil
-	} else {
-		options := ""
-		i := 0
-		for key := range loggingLevels {
-			if i != 0 {
-				options += ", "
-			}
-			options += key
-			i++
-		}
-		return fmt.Errorf("unknown log level, choose one of: %s", options)
 	}
+
+	options := ""
+	i := 0
+	for key := range loggingLevels {
+		if i != 0 {
+			options += ", "
+		}
+		options += key
+		i++
+	}
+	return fmt.Errorf("unknown log level, choose one of: %s", options)
 }
 
 func (level *loggingLevel) Type() string {

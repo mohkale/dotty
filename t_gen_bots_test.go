@@ -16,7 +16,7 @@ func TestGenBotsGeneratesBots(t *testing.T) {
 	}
 
 	if args[0] != edn.Keyword("import") {
-		t.Errorf("Tag doesn't have propper directive: expected != actual, %s != %s",
+		t.Errorf("Tag doesn't have proper directive: expected != actual, %s != %s",
 			edn.Keyword("import"), args[0])
 	}
 
@@ -26,7 +26,7 @@ func TestGenBotsGeneratesBots(t *testing.T) {
 	}
 
 	for i, obj := range out[1:] {
-		obj := obj.(map[Any]Any)
+		obj := obj.(map[any]any)
 		path := obj[edn.Keyword("path")].(string)
 		if path != paths[i] {
 			t.Errorf("Path value mismatch: expected != actual, %s != %s",
@@ -48,7 +48,7 @@ func TestGenBotsGeneratesTagsWithMap(t *testing.T) {
 		t.Errorf("Tag failed: %s", err)
 	}
 
-	res := out[1].(map[Any]Any)
+	res := out[1].(map[any]any)
 	if res[edn.Keyword("path")] != "foo" {
 		t.Errorf("Path mismatch, expected != actual, %s != %s",
 			"foo", res[edn.Keyword("path")])
@@ -71,7 +71,7 @@ func TestGenBotsDoesntOverrideExistingIfBots(t *testing.T) {
 		t.Errorf("Tag failed: %s", err)
 	}
 
-	res := out[1].(map[Any]Any)
+	res := out[1].(map[any]any)
 	if res[edn.Keyword("path")] != "foo" {
 		t.Errorf("Path mismatch, expected != actual, %s != %s",
 			"foo", res[edn.Keyword("path")])
