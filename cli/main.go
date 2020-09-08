@@ -32,6 +32,7 @@ type Options struct {
 	EnvConfig        string
 	OnlyDirectives   csvFlags
 	ExceptDirectives csvFlags
+	SaveBots         string
 	Bots             csvFlags
 }
 
@@ -83,6 +84,7 @@ var subCommands = map[string]struct {
 		generateSubcommand("install", func(set *flag.FlagSet, opts *Options) {
 			sharedInstallationOpts(set, opts)
 			sharedConfigurationOpts(set, opts)
+			set.StringVarP(&opts.SaveBots, "save-bots", "B", ".dotty.bots", "Append installing bots to this file. Set to empty to disable.")
 		}),
 	},
 	"inspect": {

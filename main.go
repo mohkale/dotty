@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/csv"
 	"fmt"
 	"io"
 	"os"
+	fp "path/filepath"
 
 	"github.com/mohkale/dotty/cli"
 
@@ -105,8 +107,12 @@ func main() {
 
 	switch cmd {
 	case "install":
+		ctx := startDotty(opts)
 		for dir := range startDotty(opts).dirChan {
 			dir.run()
+		}
+		if opts.SaveBots != "" {
+			saveBots(expandTilde(opts.HomeDir, joinPath(opts.RootDir, opts.SaveBots)), ctx.bots)
 		}
 	case "inspect":
 		for dir := range startDotty(opts).dirChan {
@@ -138,5 +144,77 @@ func main() {
 
 	if !ok {
 		os.Exit(1)
+	}
+}
+
+// append the currently installing bots to the csv file at path
+//
+func saveBots(path string, bots []string) {
+	dirname := fp.Dir(path)
+	log.Debug().Str("path", dirname).
+		Msg("Creating directory for bots file")
+	if err := os.MkdirAll(dirname, 0744); err != nil {
+		log.Fatal().Str("path", dirname).
+			Err(err).
+			Msg("Failed to create directory for bots file")
+		return
+	}
+
+	log.Debug().Str("path", path).
+		Msg("Checking whether bots file already exists")
+	exists, err := _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() }, true)
+	if err != nil {
+		log.Fatal().Str("path", path).
+			Err(err).
+			Msg("Failed to check whether bots file exists")
+	} else if exists {
+		log.Info().Str("path", path).
+			Msg("Existing bots file found, opening it")
+		fd, err := os.Open(path)
+		if err != nil {
+			log.Error().Str("path", path).
+				Err(err).
+				Msg("Failed to open bots file for writing")
+			return
+		}
+		r := csv.NewReader(fd)
+		for {
+			record, err := r.Read()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				log.Fatal().Str("path", path).
+					Err(err).
+					Msg("Failed to parse bots file")
+			}
+
+			for _, bot := range record {
+				if !stringSliceContains(bots, bot) {
+					bots = append(bots, bot)
+				}
+			}
+		}
+		if err := fd.Close(); err != nil {
+			log.Fatal().Str("path", path).
+				Err(err).
+				Msg("Failed to close opened bots file")
+		}
+	}
+
+	fd, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0700)
+	if err != nil {
+		log.Fatal().Str("path", path).
+			Err(err).
+			Strs("bots", bots).
+			Msg("Failed to open bots file for writing bots")
+	}
+	defer fd.Close()
+	w := csv.NewWriter(fd)
+	if err := w.WriteAll([][]string{bots}); err != nil {
+		log.Fatal().Str("path", path).
+			Err(err).
+			Strs("bots", bots).
+			Msg("Failed to write bots to bots file")
 	}
 }

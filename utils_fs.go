@@ -8,7 +8,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func _pathExists(path string, extraCheck func(os.FileInfo) bool) (bool, error) {
+func _pathExists(path string, extraCheck func(os.FileInfo) bool, def bool) (bool, error) {
 	stat, err := os.Stat(path)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -19,21 +19,21 @@ func _pathExists(path string, extraCheck func(os.FileInfo) bool) (bool, error) {
 		if errno == syscall.ENOTDIR {
 			return false, nil
 		}
-		return false, err
+		return def, err
 	}
 	return extraCheck(stat), nil
 }
 
 func pathExists(path string) (bool, error) {
-	return _pathExists(path, func(_ os.FileInfo) bool { return true })
+	return _pathExists(path, func(_ os.FileInfo) bool { return true }, false)
 }
 
 func fileExists(path string) (bool, error) {
-	return _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() })
+	return _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() }, false)
 }
 
 func dirExists(path string) (bool, error) {
-	return _pathExists(path, func(fi os.FileInfo) bool { return fi.IsDir() })
+	return _pathExists(path, func(fi os.FileInfo) bool { return fi.IsDir() }, false)
 }
 
 /**
