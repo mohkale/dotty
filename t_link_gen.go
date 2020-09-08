@@ -35,7 +35,7 @@ func tLinkGenGetSrc(dest Any) (Any, bool) {
 
 		if src == "" {
 			log.Warn().Str("path", srcStr).
-				Msg("src path resolved to an empty destination path")
+				Msg("Src path resolved to an empty destination path")
 			return nil, false
 		}
 

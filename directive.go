@@ -1,7 +1,11 @@
 package main
 
-import "github.com/rs/zerolog/log"
-import "olympos.io/encoding/edn"
+import (
+	"fmt"
+
+	"github.com/rs/zerolog/log"
+	"olympos.io/encoding/edn"
+)
 
 type Any = interface{}
 type AnySlice = []Any
@@ -66,7 +70,7 @@ func DispatchDirectives(ctx *Context, directives AnySlice) {
 	for i, directive := range directives {
 		dir, ok := directive.(AnySlice)
 		if !ok {
-			log.Error().Interface("arg", directive).
+			log.Error().Str("arg", fmt.Sprintf("%v", directive)).
 				Msgf("Directives must be a list, not %T", directive)
 			return
 		}

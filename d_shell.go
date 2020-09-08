@@ -108,8 +108,8 @@ func dShellListCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) boo
 				}
 				cmd += lineStr
 			} else {
-				log.Error().Interface("cmd-line", cmd).
-					Msgf("shell command lines can only consist of strings")
+				log.Error().Interface("cmd", cmdSlice).
+					Msgf("Shell command lines can only consist of strings, not %T", line)
 				return false
 			}
 		}

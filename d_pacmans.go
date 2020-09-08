@@ -32,9 +32,9 @@ type packageManager struct {
 func findPackageManagerPath(names ...string) string {
 	for _, name := range names {
 		if path, err := exec.LookPath(name); err != nil {
-			log.Error().Str("executable", name).
-				Str("error", err.Error()).
-				Msg("Error when checking for executable")
+			// log.Error().Str("executable", name).
+			// 	Str("error", err.Error()).
+			// 	Msg("Error when checking for executable")
 			return ""
 		} else {
 			return path
@@ -172,7 +172,17 @@ var packageManagers = map[edn.Keyword]*packageManager{
 			return append(cmd, pkg), true
 		},
 	},
-	// edn.Keyword("choco")
+
+	// Package manager for the chocolatey (windows) package manager.
+	// See also https://chocolatey.org/
+	edn.Keyword("choco"): {
+		exists: func() string {
+			return findPackageManagerPath("choco")
+		},
+		build: func(binPath, pkg string, opts map[Any]Any) ([]string, bool) {
+			return []string{binPath, "install", "--yes", pkg}, true
+		},
+	},
 
 	// the pacmans ヽ(^‥^=ゞ)
 	edn.Keyword("pacman"): pacmanPackageManager(true, "pacman"),

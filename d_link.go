@@ -51,7 +51,7 @@ func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool)
 		go recursiveBuildPath(ch, slice, ctx.cwd, ctx.eval, func(_ string, arg Any) {
 			log.Fatal().Interface("spec", arg).
 				Interface("path", arg).
-				Msgf("link paths must be a string or a list of strings, not %T", arg)
+				Msgf("Link paths must be a string or a list of strings, not %T", arg)
 		})
 		for path := range ch {
 			paths = append(paths, path)

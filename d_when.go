@@ -52,6 +52,8 @@ func dCondition(ctx *Context, arg Any) bool {
 			switch modifier {
 			case edn.Keyword("not"):
 				return !dCondition(ctx, cmdSlice[1:])
+			case edn.Keyword("bots"):
+				fallthrough
 			case edn.Keyword("bot"):
 				return dConditionInstallingBots(ctx, cmdSlice[1:])
 			case edn.Keyword("and"):
