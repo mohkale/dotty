@@ -46,7 +46,7 @@ type linkDirective struct {
 func dLinkGeneratePaths(ctx *Context, arg any, logTitle string) ([]string, bool) {
 	if str, ok := arg.(string); ok {
 		if str, ok = ctx.eval(str); ok {
-			return []string{joinPath(ctx.cwd, str)}, true
+			return []string{joinPath(ctx.cwd, fp.FromSlash(str))}, true
 		}
 	} else if slice, ok := arg.(anySlice); ok {
 		ch, paths := make(chan string), make([]string, 0)
@@ -147,8 +147,6 @@ func (dir *linkDirective) init(ctx *Context, opts map[any]any) *linkDirective {
 	// each destination has a trailing slash to indicate it's a directory.
 	if dir.glob || len(dir.src) > 1 {
 		for i := 0; i < len(dir.dest); i++ {
-			// WARN this'll probably fail if you're using windows style paths.
-			// TODO fix... by never using windows style paths :-P.
 			if !strings.HasSuffix(dir.dest[i], string(fp.Separator)) {
 				dir.dest[i] += string(fp.Separator)
 			}

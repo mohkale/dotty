@@ -62,7 +62,7 @@ func recursiveBuildPath(
 
 			if pathStr, ok := path.(string); ok {
 				if pathStr, ok := preJoin(pathStr); ok {
-					currentPaths[i] = joinPath(base, pathStr)
+					currentPaths[i] = joinPath(base, fp.FromSlash(pathStr))
 					i++
 				}
 			} else if pathSlice, ok := path.(anySlice); ok {
@@ -84,7 +84,7 @@ func recursiveBuildPath(
 	for _, path := range paths {
 		if pathStr, ok := path.(string); ok {
 			if pathStr, ok := preJoin(pathStr); ok {
-				ch <- joinPath(base, pathStr)
+				ch <- joinPath(base, fp.FromSlash(pathStr))
 			}
 		} else if pathSlice, ok := path.(anySlice); ok {
 			recursiveDo(pathSlice, base)

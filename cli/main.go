@@ -167,7 +167,7 @@ func ParseArgs() (string, *Options) {
 	if root, err := fp.Abs(opts.RootDir); err != nil {
 		fmt.Fprintf(os.Stderr, "%s error: unable to find root directory: %s", PROG_NAME, opts.RootDir)
 	} else {
-		opts.RootDir = root
+		opts.RootDir = fp.FromSlash(root)
 	}
 
 	return subArgs[0], opts
