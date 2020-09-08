@@ -592,7 +592,8 @@ dotty install --only link -b "$(cat .dotty.bots)"
 ```
 
 This will run any link directives for any bots we've installed in the past and save
-to `.dotty.bots`.
+to `.dotty.bots`. NOTE: you can override the default file name/path for the bots file
+using the `DOTTY_BOTS_FILE` environment variable.
 
 dotty can also traverse your dotfiles and list any bots you're checking for at any
 stage. This can let you see what bots your dotfiles have available. For more

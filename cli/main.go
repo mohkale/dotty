@@ -84,7 +84,11 @@ var subCommands = map[string]struct {
 		generateSubcommand("install", func(set *flag.FlagSet, opts *Options) {
 			sharedInstallationOpts(set, opts)
 			sharedConfigurationOpts(set, opts)
-			set.StringVarP(&opts.SaveBots, "save-bots", "B", ".dotty.bots", "Append installing bots to this file. Set to empty to disable.")
+			dottyBotsFile := ".dotty.bots"
+			if envBots, ok := os.LookupEnv("DOTTY_BOTS_FILE"); ok {
+				dottyBotsFile = envBots
+			}
+			set.StringVarP(&opts.SaveBots, "save-bots", "B", dottyBotsFile, "Append installing bots to this file. Set to empty to disable.")
 		}),
 	},
 	"inspect": {
