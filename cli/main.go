@@ -45,7 +45,7 @@ func generateSubcommand(name string, do func(*flag.FlagSet, *Options)) func(*Opt
 	}
 }
 
-func sharedInstallationOpts(set *flag.FlagSet, opts *Options) {
+func sharedConfigurationOpts(set *flag.FlagSet, opts *Options) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%s error: failed to stat cwd", PROG_NAME)
@@ -61,6 +61,9 @@ func sharedInstallationOpts(set *flag.FlagSet, opts *Options) {
 	set.StringVarP(&opts.RootDir, "cd", "d", cwd, "chdir to here before processing")
 	set.StringVarP(&opts.EnvConfig, "config", "c", "", "path to environment config. relative to rootdir.")
 	set.StringVarP(&opts.HomeDir, "home", "H", user.HomeDir, "path to environment config. relative to rootdir.")
+}
+
+func sharedInstallationOpts(set *flag.FlagSet, opts *Options) {
 	set.VarP(&opts.OnlyDirectives, "only", "o", "only run the supplied directives. this option overrides -e.")
 	set.VarP(&opts.ExceptDirectives, "except", "e", "run any directives apart from these")
 	set.VarP(&opts.Bots, "bots", "b", "specify subbots to invoke as csv. See README.")
@@ -74,17 +77,25 @@ var subCommands = map[string]struct {
 		"install dotfiles from configuration",
 		generateSubcommand("install", func(set *flag.FlagSet, opts *Options) {
 			sharedInstallationOpts(set, opts)
+			sharedConfigurationOpts(set, opts)
 		}),
 	},
 	"inspect": {
 		"print actions in human readable form",
 		generateSubcommand("", func(set *flag.FlagSet, opts *Options) {
 			sharedInstallationOpts(set, opts)
+			sharedConfigurationOpts(set, opts)
 		}),
 	},
 	"list-dirs": {
 		"list all directives known to dotty",
 		generateSubcommand("", func(set *flag.FlagSet, opts *Options) {
+		}),
+	},
+	"list-bots": {
+		"list all bots in all imports from your root import",
+		generateSubcommand("", func(set *flag.FlagSet, opts *Options) {
+			sharedConfigurationOpts(set, opts)
 		}),
 	},
 }

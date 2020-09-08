@@ -50,18 +50,7 @@ func (h LogErrorHook) Run(e *zerolog.Event, level zerolog.Level, msg string) {
 	}
 }
 
-func main() {
-	cmd, opts := cli.ParseArgs()
-
-	InitLogger(opts)
-	InitDirectives()
-	InitTags()
-
-	// if an error is logged, program exits non-0.
-	ok, errorHook := true, LogErrorHook{}
-	errorHook.callback = func() { ok = false }
-	log.Logger = log.Hook(errorHook)
-
+func startDotty(opts *cli.Options) *Context {
 	ctx := CreateContext()
 	ctx.root = opts.RootDir
 	ctx.home = opts.HomeDir
@@ -98,18 +87,48 @@ func main() {
 		ParseDirective(edn.Keyword("import"), ctx, AnySlice{"config.edn"})
 	}()
 
+	return ctx
+}
+
+func main() {
+	cmd, opts := cli.ParseArgs()
+
+	InitLogger(opts)
+	InitDirectives()
+	InitTags()
+
+	// if an error is logged, program exits non-0.
+	ok, errorHook := true, LogErrorHook{}
+	errorHook.callback = func() { ok = false }
+	log.Logger = log.Hook(errorHook)
+
 	switch cmd {
 	case "install":
-		for dir := range ctx.dirChan {
+		for dir := range startDotty(opts).dirChan {
 			dir.run()
 		}
 	case "inspect":
-		for dir := range ctx.dirChan {
+		for dir := range startDotty(opts).dirChan {
 			fmt.Println(dir.log())
 		}
 	case "list-dirs":
 		for key := range directives {
 			fmt.Println(string(key))
+		}
+	case "list-bots":
+		bots := make(map[string]struct{})
+		dConditionInstallingBots = func(ctx *Context, args AnySlice) bool {
+			for _, arg := range args {
+				if argStr, ok := arg.(string); ok {
+					if _, ok := bots[argStr]; !ok {
+						fmt.Println(argStr)
+						bots[argStr] = struct{}{}
+					}
+				}
+			}
+			return true
+		}
+		for range startDotty(opts).dirChan {
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "%s error: unknown command: %s", cli.PROG_NAME, cmd)

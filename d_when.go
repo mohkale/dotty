@@ -85,7 +85,7 @@ func dCondition(ctx *Context, arg Any) bool {
 	return res
 }
 
-func dConditionInstallingBots(ctx *Context, args AnySlice) bool {
+var dConditionInstallingBots = func(ctx *Context, args AnySlice) bool {
 	if len(args) == 0 {
 		return false
 	}
