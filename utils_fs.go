@@ -43,7 +43,7 @@ func dirExists(path string) (bool, error) {
  */
 func findExistingFile(paths ...string) (string, error) {
 	for _, path := range paths {
-		log.Debug().Str("path", path).Msg("checking for file at path")
+		log.Trace().Str("path", path).Msg("Checking for file at path")
 		exists, err := fileExists(path)
 		if err != nil {
 			return "", err

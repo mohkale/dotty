@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 	"olympos.io/encoding/edn"
@@ -125,7 +126,7 @@ func dShellListCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) boo
 		onDone((&shellDirective{cmd: cmdStr, shell: ctx.shell}).init(ctx, nil))
 	} else {
 		log.Error().Interface("cmd-line", cmd).
-			Msgf("shell command lines can only be lines, lists of lines or maps containing them, not %T", cmd)
+			Msgf("Shell command lines can only be lines, lists of lines or maps containing them, not %T", cmd)
 		return false
 	}
 	return true
@@ -180,11 +181,11 @@ func (dir *shellDirective) exec() bool {
 	}
 
 	if !dir.quiet {
-		log.Debug().Str("shell", dir.shell).
-			Str("cmd", dir.cmd).
+		log.Trace().Str("shell", dir.shell).
+			Strs("cmd", strings.Split(dir.cmd, "\n")).
 			Bool("interactive", dir.interactive).
 			Bool("quiet", dir.quiet).
-			Msg("running subcommand")
+			Msg("Running subcommand")
 	}
 
 	if err := cmd.Run(); err != nil {

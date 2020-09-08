@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/rs/zerolog"
 )
@@ -15,6 +16,7 @@ var loggingLevels = map[string]loggingLevel{
 	"error":    loggingLevel(zerolog.ErrorLevel),
 	"fatal":    loggingLevel(zerolog.FatalLevel),
 	"disabled": loggingLevel(zerolog.NoLevel),
+	"trace":    loggingLevel(zerolog.TraceLevel),
 }
 
 func (level *loggingLevel) String() string {
@@ -27,7 +29,7 @@ func (level *loggingLevel) String() string {
 }
 
 func (level *loggingLevel) Set(arg string) error {
-	if newLevel, ok := loggingLevels[arg]; ok {
+	if newLevel, ok := loggingLevels[strings.ToLower(arg)]; ok {
 		*level = newLevel
 		return nil
 	} else {

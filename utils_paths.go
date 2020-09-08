@@ -152,7 +152,7 @@ func recursiveBuildDirectivesFromPaths(
 			} else {
 				log.Warn().
 					Str("path", fmt.Sprintf("%s", src)).
-					Msgf("path must be a string or list of strings, not %T", src)
+					Msgf("Path must be a string or list of strings, not %T", src)
 			}
 		}
 	})

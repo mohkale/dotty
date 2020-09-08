@@ -191,7 +191,7 @@ func (dir *packageDirective) run() {
 		updateCmd := dir.manager.update(dir.manager.execPath)
 		log.Info().Str("manager", dir.managerName).
 			Msg("Updating package archive for manager")
-		log.Debug().Strs("cmd", updateCmd).
+		log.Trace().Strs("cmd", updateCmd).
 			Msg("Running subcommand")
 
 		// for now, just inherit all attributes from the package we're installing

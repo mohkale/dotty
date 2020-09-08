@@ -92,7 +92,7 @@ func dConditionInstallingBots(ctx *Context, args AnySlice) bool {
 
 	for _, arg := range args {
 		if bot, ok := arg.(string); ok {
-			log.Debug().Str("bot", bot).Msg("Checking if installing bot")
+			log.Trace().Str("bot", bot).Msg("Checking if installing bot")
 			if !ctx.installingBot(bot) {
 				return false
 			}

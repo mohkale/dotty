@@ -40,7 +40,7 @@ func dMkdir(ctx *Context, args AnySlice) {
 					ctx.mkdirOpts["permissions"] = os.FileMode(permInt)
 				} else {
 					log.Warn().Str("permissions", fmt.Sprintf("%v", perms)).
-						Msgf("permissions must be a valid file permission flag, not %T", perms)
+						Msgf("Permissions must be a valid file permission flag, not %T", perms)
 				}
 			}
 			return ctx, true

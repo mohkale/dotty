@@ -99,7 +99,7 @@ func tLinkGen(args AnySlice) (AnySlice, error) {
 
 	if args[0] != edn.Keyword("link") {
 		log.Fatal().Str("directive", fmt.Sprintf("%s", args)).
-			Msgf("the link-gen tag can only be applied to %s directives", edn.Keyword("link"))
+			Msgf("The link-gen tag can only be applied to %s directives", edn.Keyword("link"))
 	}
 
 	newArgs := make(AnySlice, 0, len(args))

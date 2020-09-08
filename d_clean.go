@@ -77,7 +77,6 @@ func dClean(ctx *Context, args AnySlice) {
 func (dir *cleanDirective) init(ctx *Context) *cleanDirective {
 	readMapOptionBool(ctx.cleanOpts, nil, &dir.force, "force", false)
 	readMapOptionBool(ctx.cleanOpts, nil, &dir.recursive, "recursive", false)
-	fmt.Fprintln(os.Stderr, dir)
 	return dir
 }
 
