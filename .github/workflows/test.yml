@@ -21,7 +21,7 @@ jobs:
           go-version: ^1.15
         id: go
       - name: Build
-        run: go get -v -t -d ./... && go build -v .
+        run: go get -v -t -d ./...
       - name: Set up Ruby
         # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
         # change this to (see https://github.com/ruby/setup-ruby#versioning):
@@ -30,11 +30,9 @@ jobs:
         with:
           ruby-version: 2.6
       - name: Install Dependencies
-        working-directory: ${{env.working-directory}}
-        run: bundle install
+        run: make setup-tests
       - name: Run Tests
-        working-directory: ${{env.working-directory}}
-        run: bundle exec rspec --profile -P 'test_*.rb'
+        run: make test-regression
       - name: Lint
         working-directory: ${{env.working-directory}}
         run: bundle exec rubocop
@@ -54,7 +52,7 @@ jobs:
         run: |
           go get -v -t -d ./...
       - name: Test
-        run: go test -v .
+        run: make test-go
       - name: Lint
         run: |
           # install [[https://github.com/alecthomas/gometalinter][gometalinter]] first.
