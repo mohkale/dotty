@@ -24,6 +24,9 @@ type Context struct {
 
 	bots []string
 
+	onlyDirectives   []string
+	exceptDirectives []string
+
 	// send parsed directives through here.
 	dirChan chan Directive
 
@@ -41,19 +44,21 @@ type Context struct {
 
 func CreateContext() *Context {
 	return &Context{
-		root:        "",
-		cwd:         "",
-		shell:       "",
-		home:        "",
-		bots:        make([]string, 0),
-		dirChan:     make(chan Directive),
-		mkdirOpts:   make(map[string]Any),
-		linkOpts:    make(map[string]Any),
-		cleanOpts:   make(map[string]Any),
-		shellOpts:   make(map[string]Any),
-		packageOpts: make(map[string]Any),
-		envOpts:     make(map[string]string),
-		_env:        nil,
+		root:             "",
+		cwd:              "",
+		shell:            "",
+		home:             "",
+		bots:             make([]string, 0),
+		dirChan:          make(chan Directive),
+		mkdirOpts:        make(map[string]Any),
+		linkOpts:         make(map[string]Any),
+		cleanOpts:        make(map[string]Any),
+		onlyDirectives:   make([]string, 0),
+		exceptDirectives: make([]string, 0),
+		shellOpts:        make(map[string]Any),
+		packageOpts:      make(map[string]Any),
+		envOpts:          make(map[string]string),
+		_env:             nil,
 	}
 }
 
@@ -87,16 +92,28 @@ func _cloneDirectiveOpts(src map[string]Any, dest map[string]Any) {
 	}
 }
 
-func (ctx *Context) fullClone() *Context {
+/**
+ * An effective clone of the current context.
+ *
+ * Some fields haven't been cloned because their
+ * intended to be shared across all context instances.
+ */
+func (ctx *Context) clone() *Context {
 	clone := CreateContext()
+	// basic types so they're auto immutable
 	clone.root = ctx.root
 	clone.cwd = ctx.cwd
 	clone.shell = ctx.shell
 	clone.home = ctx.home
-	// TODO maybe keep single copy across all instances.
-	clone.bots = make([]string, len(ctx.bots))
-	copy(clone.bots, ctx.bots)
-	clone.dirChan = make(chan Directive)
+
+	// fields that should be shared across all instances
+	// NOTE These aren't modifiable.
+	clone.bots = ctx.bots
+	clone.dirChan = ctx.dirChan
+	clone.onlyDirectives = ctx.onlyDirectives
+	clone.exceptDirectives = ctx.exceptDirectives
+
+	// Fields that are expected to be mutated at different points.
 	_cloneDirectiveOpts(ctx.mkdirOpts, clone.mkdirOpts)
 	_cloneDirectiveOpts(ctx.linkOpts, clone.linkOpts)
 	_cloneDirectiveOpts(ctx.cleanOpts, clone.cleanOpts)
@@ -107,18 +124,6 @@ func (ctx *Context) fullClone() *Context {
 	}
 
 	return clone
-}
-
-/**
- * An effective clone of the current context.
- *
- * Some fields haven't been cloned because their
- * intended to be shared across all context instances.
- */
-func (ctx *Context) clone() *Context {
-	c := ctx.fullClone()
-	c.dirChan = ctx.dirChan
-	return c
 }
 
 /**
@@ -190,5 +195,17 @@ func (ctx *Context) installingBot(bot string) bool {
 			return true
 		}
 	}
+	return false
+}
+
+func (ctx *Context) skipDirectivePredicate(dir string) bool {
+	if len(ctx.exceptDirectives) > 0 &&
+		stringSliceContains(ctx.exceptDirectives, dir) {
+		return true
+	} else if len(ctx.onlyDirectives) > 0 &&
+		!stringSliceContains(ctx.onlyDirectives, dir) {
+		return true
+	}
+
 	return false
 }

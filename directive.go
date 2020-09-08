@@ -83,7 +83,9 @@ func DispatchDirectives(ctx *Context, directives AnySlice) {
 
 		dirKey, args := dir[0], dir[1:]
 		if dirKey, ok := dirKey.(edn.Keyword); ok {
-			ParseDirective(dirKey, ctx, args)
+			if !ctx.skipDirectivePredicate(string(dirKey)) {
+				ParseDirective(dirKey, ctx, args)
+			}
 		} else {
 			log.Warn().Int("index", i+1).
 				Interface("value", dir).

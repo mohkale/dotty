@@ -13,6 +13,7 @@ import (
 )
 
 var PROG_NAME = "dotty"
+var PROG_VERSION = "0.0.0"
 var USAGE = fmt.Sprintf(`
 %s is the delightfully lispy dotfile manager.
 `, PROG_NAME)
@@ -24,8 +25,8 @@ type Options struct {
 	RootDir          string
 	HomeDir          string
 	EnvConfig        string
-	OnlyDirectives   arrayFlags
-	ExceptDirectives arrayFlags
+	OnlyDirectives   csvFlags
+	ExceptDirectives csvFlags
 	Bots             csvFlags
 }
 
@@ -81,6 +82,11 @@ var subCommands = map[string]struct {
 			sharedInstallationOpts(set, opts)
 		}),
 	},
+	"list-dirs": {
+		"list all directives known to dotty",
+		generateSubcommand("", func(set *flag.FlagSet, opts *Options) {
+		}),
+	},
 }
 
 func subCommandKeys() []string {
@@ -108,6 +114,7 @@ func rootFlagSet(opts *Options) *flag.FlagSet {
 		fmt.Fprintln(os.Stderr, "Options:")
 		set.PrintDefaults()
 		fmt.Fprintln(os.Stderr, "")
+		fmt.Fprintf(os.Stderr, "%s, version %s\n", PROG_NAME, PROG_VERSION)
 	}
 
 	set.SetInterspersed(false)

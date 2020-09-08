@@ -23,6 +23,6 @@ func (i *arrayFlags) Type() string {
 	return i.metavar
 }
 
-func (i *arrayFlags) getValues() []string {
+func (i *arrayFlags) GetValues() []string {
 	return i.values
 }

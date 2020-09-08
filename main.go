@@ -66,6 +66,8 @@ func main() {
 	ctx.root = opts.RootDir
 	ctx.home = opts.HomeDir
 	ctx.cwd = ctx.root
+	ctx.onlyDirectives = opts.OnlyDirectives.GetValues()
+	ctx.exceptDirectives = opts.ExceptDirectives.GetValues()
 	ctx.bots = opts.Bots.GetValues()
 	ctx.shell = getShell()
 	os.Setenv("HOME", opts.HomeDir)
@@ -104,6 +106,10 @@ func main() {
 	case "inspect":
 		for dir := range ctx.dirChan {
 			fmt.Println(dir.log())
+		}
+	case "list-dirs":
+		for key := range directives {
+			fmt.Println(string(key))
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "%s error: unknown command: %s", cli.PROG_NAME, cmd)
