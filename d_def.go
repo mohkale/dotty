@@ -88,6 +88,12 @@ func dDef(ctx *Context, args anySlice) {
 func dDefDirectiveOpts(ctx *Context, args anySlice, callback func(string, any), errHandler func(any)) {
 	for i := 0; i < len(args); i++ {
 		key := args[i]
+
+		// automatically convert keywords to strings
+		if keySym, ok := key.(edn.Keyword); ok {
+			key = string(keySym)
+		}
+
 		if keyStr, ok := key.(string); ok {
 			if i == len(args)-1 {
 				log.Error().Str("key", keyStr).
