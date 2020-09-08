@@ -45,7 +45,9 @@ type linkDirective struct {
 // building in the logging output.
 func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool) {
 	if str, ok := arg.(string); ok {
-		return []string{joinPath(ctx.cwd, str)}, true
+		if str, ok = ctx.eval(str); ok {
+			return []string{joinPath(ctx.cwd, str)}, true
+		}
 	} else if slice, ok := arg.(AnySlice); ok {
 		ch, paths := make(chan string), make([]string, 0)
 		go recursiveBuildPath(ch, slice, ctx.cwd, ctx.eval, func(_ string, arg Any) {
@@ -71,6 +73,10 @@ LoopStart:
 		path := args[i]
 
 		if pathMap, ok := path.(map[Any]Any); ok {
+			if !directiveMapCondition(ctx, pathMap) {
+				continue
+			}
+
 			// to avoid having to repeat the following logic twice, we abstract
 			// the interface for dealing with both src and dest into two fields
 			// in a struct.

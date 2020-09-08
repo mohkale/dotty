@@ -97,6 +97,32 @@ func DispatchDirectives(ctx *Context, directives AnySlice) {
 // The rest of this file just consists of utility functions to help make parsing
 // fields out of simply AnyMaps a lot more straightforward.
 
+// assert whether the conditions specified by opts evaluate to
+// true or not.
+//
+// These conditions are the same as a general purpose :when directive.
+// opts can also include a :if-bots directive which is just a shortcut
+// for `:when (:bots ARGS)`, because that's most likely what this is
+// going to be used for.
+func directiveMapCondition(ctx *Context, opts map[Any]Any) bool {
+	res := true
+	if bots, ok := opts[edn.Keyword("if-bots")]; ok {
+		if botsStr, ok := bots.(string); ok {
+			res = dConditionInstallingBots(ctx, AnySlice{botsStr})
+		} else if botsSlice, ok := bots.(AnySlice); ok {
+			res = dConditionInstallingBots(ctx, botsSlice)
+		} else {
+			res = false
+		}
+	}
+
+	if when, ok := opts[edn.Keyword("when")]; res && ok {
+		res = dCondition(ctx, when)
+	}
+
+	return res
+}
+
 // read the boolean value name from ctx or opts into field, assigning a
 // default value of def.
 func readMapOptionBool(ctxOpts map[string]Any, opts map[Any]Any, field *bool, name string, def bool) bool {

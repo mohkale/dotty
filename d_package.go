@@ -121,6 +121,10 @@ func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName s
 		return
 	}
 
+	if !directiveMapCondition(ctx, pkgMap) {
+		return
+	}
+
 	// parse out the name of the package you're installing
 	var pkgStr string
 	if pkgName, ok := pkgMap[edn.Keyword("pkg")]; !ok {

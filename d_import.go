@@ -64,8 +64,12 @@ func dImport(ctx *Context, args AnySlice) {
 			src, ok := opts[edn.Keyword("path")]
 			return src, ok
 		},
-		func(ctx *Context, opts map[Any]Any) *Context {
-			return ctx
+		func(ctx *Context, opts map[Any]Any) (*Context, bool) {
+			if !directiveMapCondition(ctx, opts) {
+				return ctx, false
+			}
+
+			return ctx, true
 		},
 	)
 }

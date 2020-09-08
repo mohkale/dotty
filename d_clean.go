@@ -51,7 +51,11 @@ func dClean(ctx *Context, args AnySlice) {
 			return src, ok
 		},
 		// update context with opts
-		func(ctx *Context, opts map[Any]Any) *Context {
+		func(ctx *Context, opts map[Any]Any) (*Context, bool) {
+			if !directiveMapCondition(ctx, opts) {
+				return ctx, false
+			}
+
 			// luckily all configurable fields are booleans so no reflection needed.
 			for _, opt := range []string{"force", "recursive"} {
 				if arg, ok := opts[edn.Keyword(opt)]; ok {
@@ -64,7 +68,7 @@ func dClean(ctx *Context, args AnySlice) {
 				}
 			}
 
-			return ctx
+			return ctx, true
 		},
 	)
 }

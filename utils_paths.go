@@ -117,7 +117,7 @@ func recursiveBuildDirectivesFromPaths(
 	ctx *Context, args AnySlice,
 	pathCompleteCallback func(ctx *Context, p string),
 	getSrcsFromOpts func(opts map[Any]Any) (Any, bool),
-	updateContext func(ctx *Context, opts map[Any]Any) *Context,
+	updateContext func(ctx *Context, opts map[Any]Any) (*Context, bool),
 ) {
 	pathCh, done := make(chan string), make(chan struct{})
 	go func() {
@@ -138,7 +138,10 @@ func recursiveBuildDirectivesFromPaths(
 		}
 
 		if src, ok := getSrcsFromOpts(sMap); ok {
-			newCtx := updateContext(ctx.chdir(base), sMap)
+			newCtx, ok := updateContext(ctx.chdir(base), sMap)
+			if !ok {
+				return
+			}
 			if srcStr, ok := src.(string); ok {
 				src = AnySlice{srcStr}
 			}

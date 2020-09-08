@@ -70,6 +70,10 @@ func dShellCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) bool {
  * a command line after part of it has already been provided.
  */
 func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCallback) bool {
+	if !directiveMapCondition(ctx, opts) {
+		return false
+	}
+
 	cmd, ok := opts[edn.Keyword("cmd")]
 	if !ok {
 		log.Error().Interface("opts", opts).

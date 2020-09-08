@@ -30,7 +30,11 @@ func dMkdir(ctx *Context, args AnySlice) {
 			return src, ok
 		},
 		// update context.
-		func(ctx *Context, opts map[Any]Any) *Context {
+		func(ctx *Context, opts map[Any]Any) (*Context, bool) {
+			if !directiveMapCondition(ctx, opts) {
+				return ctx, false
+			}
+
 			if perms, ok := opts[edn.Keyword("chmod")]; ok {
 				if permInt, err := strconv.ParseInt(fmt.Sprintf("%v", perms), 8, 64); err == nil {
 					ctx.mkdirOpts["permissions"] = os.FileMode(permInt)
@@ -39,7 +43,7 @@ func dMkdir(ctx *Context, args AnySlice) {
 						Msgf("permissions must be a valid file permission flag, not %T", perms)
 				}
 			}
-			return ctx
+			return ctx, true
 		},
 	)
 }
