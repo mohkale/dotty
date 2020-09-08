@@ -27,17 +27,20 @@ var directives map[edn.Keyword]directiveConstructor
 
 func InitDirectives() {
 	directives = map[edn.Keyword]directiveConstructor{
-		edn.Keyword("import"): dImport,
-		edn.Keyword("mkdir"):  dMkdir,
-		edn.Keyword("link"):   dLink,
-		edn.Keyword("shell"):  dShell,
-		edn.Keyword("clean"):  dClean,
-		edn.Keyword("when"):   dWhen,
-		edn.Keyword("debug"):  dDebug,
-		edn.Keyword("info"):   dInfo,
-		edn.Keyword("warn"):   dWarn,
-		edn.Keyword("def"):    dDef,
-		edn.Keyword("ignore"): dIgnore,
+		edn.Keyword("import"):   dImport,
+		edn.Keyword("mkdir"):    dMkdir,
+		edn.Keyword("mkdirs"):   dMkdir,
+		edn.Keyword("link"):     dLink,
+		edn.Keyword("shell"):    dShell,
+		edn.Keyword("clean"):    dClean,
+		edn.Keyword("when"):     dWhen,
+		edn.Keyword("debug"):    dDebug,
+		edn.Keyword("info"):     dInfo,
+		edn.Keyword("warn"):     dWarn,
+		edn.Keyword("def"):      dDef,
+		edn.Keyword("package"):  dPackage,
+		edn.Keyword("packages"): dPackage,
+		edn.Keyword("ignore"):   dIgnore,
 	}
 }
 

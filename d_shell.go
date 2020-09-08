@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"strings"
 
 	"github.com/rs/zerolog/log"
 	"olympos.io/encoding/edn"
@@ -47,15 +46,19 @@ func dShell(ctx *Context, args AnySlice) {
 		ctx.dirChan <- dir
 	}
 	for _, cmd := range args {
-		if opts, ok := cmd.(map[Any]Any); ok {
-			dShellMappedCommand(ctx, opts, callback)
-		} else {
-			dShellListCommand(ctx, cmd, callback)
-		}
+		dShellCommand(ctx, cmd, callback)
 	}
 }
 
 type dShellPreparedCallback = func(dir *shellDirective)
+
+func dShellCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) bool {
+	if opts, ok := cmd.(map[Any]Any); ok {
+		return dShellMappedCommand(ctx, opts, onDone)
+	} else {
+		return dShellListCommand(ctx, cmd, onDone)
+	}
+}
 
 /**
  * For when the command line is being supplied as a map of options
@@ -63,16 +66,17 @@ type dShellPreparedCallback = func(dir *shellDirective)
  * own function because you can't recursively change the options for
  * a command line after part of it has already been provided.
  */
-func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCallback) {
+func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCallback) bool {
 	cmd, ok := opts[edn.Keyword("cmd")]
 	if !ok {
-		log.Error().Str("opts", fmt.Sprintf("%s", opts)).
+		log.Error().Interface("opts", opts).
 			Msgf("shell directive must supply a %s field", edn.Keyword("cmd"))
-		return
+		return false
 	}
 
 	if cmdStr, ok := cmd.(string); ok {
 		onDone((&shellDirective{cmd: cmdStr, shell: ctx.shell}).init(ctx, opts))
+		return true
 	} else {
 		newCtx := ctx.clone()
 		for key, val := range opts {
@@ -84,7 +88,7 @@ func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCa
 			newCtx.shellOpts[string(key)] = val
 		}
 
-		dShellListCommand(newCtx, cmd, onDone)
+		return dShellListCommand(newCtx, cmd, onDone)
 	}
 }
 
@@ -94,7 +98,7 @@ func dShellMappedCommand(ctx *Context, opts map[Any]Any, onDone dShellPreparedCa
  * been abstracted into its own function because you can't recursively
  * build a command line... YET :grin:.
  */
-func dShellListCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) {
+func dShellListCommand(ctx *Context, cmd Any, onDone dShellPreparedCallback) bool {
 	if cmdSlice, ok := cmd.(AnySlice); ok {
 		var cmd string
 		for i, line := range cmdSlice {
@@ -141,9 +145,26 @@ func (dir *shellDirective) run() {
 	dir.exec()
 }
 
+func buildCommand(cmdLine []string, env []string, stdin bool, stdout bool, stderr bool) *exec.Cmd {
+	cmd := exec.Command(cmdLine[0], cmdLine[1:]...)
+	cmd.Env = env
+
+	if stdout {
+		cmd.Stdout = os.Stdout
+	}
+	if stderr {
+		cmd.Stderr = os.Stderr
+	}
+	if stdin {
+		cmd.Stdin = os.Stdin
+	}
+
+	return cmd
+}
+
 func (dir *shellDirective) exec() bool {
-	cmd := exec.Command(dir.shell, dir.shellArgs()...)
-	cmd.Env = dir.env
+	cmd := buildCommand([]string{dir.shell, shellExecFlag(dir.shell), dir.cmd},
+		dir.env, dir.stdin, dir.stdout, dir.stderr)
 
 	if dir.desc != "" {
 		log.Info().Msg(dir.desc)
@@ -157,16 +178,6 @@ func (dir *shellDirective) exec() bool {
 			Msg("running subcommand")
 	}
 
-	if dir.stdout {
-		cmd.Stdout = os.Stdout
-	}
-	if dir.stderr {
-		cmd.Stderr = os.Stderr
-	}
-	if dir.stdin {
-		cmd.Stdin = os.Stdin
-	}
-
 	if err := cmd.Run(); err != nil {
 		if !dir.quiet {
 			if exitErr, ok := err.(*exec.ExitError); ok {
@@ -174,27 +185,15 @@ func (dir *shellDirective) exec() bool {
 					Str("cmd", dir.cmd).
 					Int("code", exitErr.ExitCode()).
 					Err(err).
-					Msg("subcommand failed")
+					Msg("Subcommand failed")
 			} else {
 				log.Error().Str("shell", dir.shell).
 					Str("cmd", dir.cmd).
 					Err(err).
-					Msg("failed to spawn subcommand")
+					Msg("Failed to spawn subcommand")
 			}
 		}
 		return false
 	}
 	return true
-}
-
-// return the flags to pass to the shell to run cmd
-//
-// this tries to get around annoying errors when using
-// windows cmd.exe as well.
-func (dir *shellDirective) shellArgs() []string {
-	if dir.shell == "cmd" || dir.shell == "cmd.exe" {
-		return []string{"/c", dir.cmd}
-	} else {
-		return []string{"-c", dir.cmd}
-	}
 }

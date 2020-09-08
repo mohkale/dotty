@@ -29,3 +29,18 @@ func isLinux() bool {
 func isUnixy() bool {
 	return isLinux() || isDarwin()
 }
+
+// return the flags to pass to the shell to run a cmd
+//
+// this tries to get around annoying errors when using
+// windows cmd.exe as well.
+func shellExecFlag(shell string) string {
+	switch shell {
+	case "cmd":
+		fallthrough
+	case "cmd.exe":
+		return "/c"
+	default:
+		return "-c"
+	}
+}

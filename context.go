@@ -28,11 +28,12 @@ type Context struct {
 	dirChan chan Directive
 
 	// Key/Value options for specific directives or subshell environments.
-	mkdirOpts map[string]Any
-	linkOpts  map[string]Any
-	cleanOpts map[string]Any
-	shellOpts map[string]Any
-	envOpts   map[string]string
+	mkdirOpts   map[string]Any
+	linkOpts    map[string]Any
+	cleanOpts   map[string]Any
+	shellOpts   map[string]Any
+	packageOpts map[string]Any
+	envOpts     map[string]string
 
 	// generated environment of the form that exec.Command can accept.
 	_env []string
@@ -40,18 +41,19 @@ type Context struct {
 
 func CreateContext() *Context {
 	return &Context{
-		root:      "",
-		cwd:       "",
-		shell:     "",
-		home:      "",
-		bots:      make([]string, 0),
-		dirChan:   make(chan Directive),
-		mkdirOpts: make(map[string]Any),
-		linkOpts:  make(map[string]Any),
-		cleanOpts: make(map[string]Any),
-		shellOpts: make(map[string]Any),
-		envOpts:   make(map[string]string),
-		_env:      nil,
+		root:        "",
+		cwd:         "",
+		shell:       "",
+		home:        "",
+		bots:        make([]string, 0),
+		dirChan:     make(chan Directive),
+		mkdirOpts:   make(map[string]Any),
+		linkOpts:    make(map[string]Any),
+		cleanOpts:   make(map[string]Any),
+		shellOpts:   make(map[string]Any),
+		packageOpts: make(map[string]Any),
+		envOpts:     make(map[string]string),
+		_env:        nil,
 	}
 }
 
@@ -60,6 +62,8 @@ func CreateContext() *Context {
  */
 func (ctx *Context) optsFromString(key string) (map[string]Any, bool) {
 	switch {
+	case key == "mkdirs":
+		fallthrough
 	case key == "mkdir":
 		return ctx.mkdirOpts, true
 	case key == "link":
@@ -68,6 +72,10 @@ func (ctx *Context) optsFromString(key string) (map[string]Any, bool) {
 		return ctx.cleanOpts, true
 	case key == "shell":
 		return ctx.shellOpts, true
+	case key == "packages":
+		fallthrough
+	case key == "package":
+		return ctx.packageOpts, true
 	}
 
 	return nil, false
@@ -93,6 +101,7 @@ func (ctx *Context) fullClone() *Context {
 	_cloneDirectiveOpts(ctx.linkOpts, clone.linkOpts)
 	_cloneDirectiveOpts(ctx.cleanOpts, clone.cleanOpts)
 	_cloneDirectiveOpts(ctx.shellOpts, clone.shellOpts)
+	_cloneDirectiveOpts(ctx.packageOpts, clone.packageOpts)
 	for key, value := range ctx.envOpts {
 		clone.envOpts[key] = value
 	}
