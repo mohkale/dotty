@@ -64,7 +64,7 @@ func (dir *mkdirDirective) log() string {
 }
 
 func (dir *mkdirDirective) run() {
-	if exists, err := pathExists(dir.path); err != nil {
+	if exists, err := pathExists(dir.path, false); err != nil {
 		log.Error().Str("path", dir.path).
 			Str("error", err.Error()).
 			Msg("Failed to check whether directory exists")

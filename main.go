@@ -87,7 +87,7 @@ func startDotty(opts *cli.Options) *Context {
 
 	go func() {
 		defer close(ctx.dirChan)
-		parseDirective(edn.Keyword("import"), ctx, anySlice{"config.edn"})
+		parseDirective(edn.Keyword("import"), ctx, anySlice{"config"})
 	}()
 
 	return ctx
@@ -108,7 +108,7 @@ func main() {
 	switch cmd {
 	case "install":
 		ctx := startDotty(opts)
-		for dir := range startDotty(opts).dirChan {
+		for dir := range ctx.dirChan {
 			dir.run()
 		}
 		if opts.SaveBots != "" {
@@ -162,7 +162,7 @@ func saveBots(path string, bots []string) {
 
 	log.Debug().Str("path", path).
 		Msg("Checking whether bots file already exists")
-	exists, err := _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() }, true)
+	exists, err := _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() }, true, true)
 	if err != nil {
 		log.Fatal().Str("path", path).
 			Err(err).

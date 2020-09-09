@@ -242,7 +242,7 @@ func (dir *linkDirective) run() {
 				}
 			} else {
 				destParent := fp.Dir(dest)
-				if destParentExists, err := dirExists(destParent); err != nil {
+				if destParentExists, err := dirExists(destParent, true); err != nil {
 					log.Error().Str("src", src).
 						Str("dest", dest).
 						Str("destParent", destParent).
@@ -313,7 +313,7 @@ func (dir *linkDirective) linkSources(ch chan string) {
 			// or if we don't care, then return the file as is.
 			if dir.symbolic && dir.ignoreMissing {
 				ch <- src
-			} else if exists, err := pathExists(src); err != nil {
+			} else if exists, err := pathExists(src, true); err != nil {
 				log.Error().Str("path", src).
 					Str("error", err.Error()).
 					Msg("Error when checking file exists")

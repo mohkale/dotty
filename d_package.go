@@ -169,7 +169,7 @@ func dPackageBuildDirective(ctx *Context, manager *packageManager, managerName s
 
 func (dir *packageDirective) init(ctx *Context, opts map[any]any) *packageDirective {
 	dir.env = ctx.environ()
-	readMapOptionBool(ctx.packageOpts, opts, &dir.interactive, "interactive", false)
+	readMapOptionBool(ctx.packageOpts, opts, &dir.interactive, "interactive", true)
 	readMapOptionBool(ctx.packageOpts, opts, &dir.stdin, "stdin", dir.interactive)
 	readMapOptionBool(ctx.packageOpts, opts, &dir.stdout, "stdour", dir.interactive)
 	readMapOptionBool(ctx.packageOpts, opts, &dir.stderr, "stderr", dir.interactive)
@@ -201,6 +201,8 @@ func (dir *packageDirective) run() {
 				Msg("Failed to update package archive")
 			return
 		}
+
+		dir.manager.updated = true
 	}
 
 	if dir.before != nil && !dir.before.exec() {

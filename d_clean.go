@@ -120,7 +120,7 @@ func (dir *cleanDirective) run() {
 			continue
 		}
 
-		if exists, err := fileExists(dest); err != nil {
+		if exists, err := fileExists(dest, true); err != nil {
 			log.Error().Str("path", dest).
 				Str("error", err.Error()).
 				Msg("Error when checking file exists")

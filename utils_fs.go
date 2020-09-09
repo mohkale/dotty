@@ -8,8 +8,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func _pathExists(path string, extraCheck func(os.FileInfo) bool, def bool) (bool, error) {
-	stat, err := os.Stat(path)
+func _pathExists(path string, extraCheck func(os.FileInfo) bool, def bool, followSymlinks bool) (bool, error) {
+	var stat os.FileInfo
+	var err error
+	if followSymlinks {
+		stat, err = os.Stat(path)
+	} else {
+		stat, err = os.Lstat(path)
+	}
+
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, nil
@@ -24,16 +31,16 @@ func _pathExists(path string, extraCheck func(os.FileInfo) bool, def bool) (bool
 	return extraCheck(stat), nil
 }
 
-func pathExists(path string) (bool, error) {
-	return _pathExists(path, func(_ os.FileInfo) bool { return true }, false)
+func pathExists(path string, followSymlinks bool) (bool, error) {
+	return _pathExists(path, func(_ os.FileInfo) bool { return true }, false, followSymlinks)
 }
 
-func fileExists(path string) (bool, error) {
-	return _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() }, false)
+func fileExists(path string, followSymlinks bool) (bool, error) {
+	return _pathExists(path, func(fi os.FileInfo) bool { return !fi.IsDir() }, false, followSymlinks)
 }
 
-func dirExists(path string) (bool, error) {
-	return _pathExists(path, func(fi os.FileInfo) bool { return fi.IsDir() }, false)
+func dirExists(path string, followSymlinks bool) (bool, error) {
+	return _pathExists(path, func(fi os.FileInfo) bool { return fi.IsDir() }, false, followSymlinks)
 }
 
 /**
@@ -44,7 +51,7 @@ func dirExists(path string) (bool, error) {
 func findExistingFile(paths ...string) (string, error) {
 	for _, path := range paths {
 		log.Trace().Str("path", path).Msg("Checking for file at path")
-		exists, err := fileExists(path)
+		exists, err := fileExists(path, true)
 		if err != nil {
 			return "", err
 		}

@@ -8,11 +8,12 @@ build: $(SRC)
 
 build-release:
 	# adapted from [[https://github.com/gokcehan/lf/blob/1d959910547f6b69e0898373063e1b3e7525a4ec/gen/xbuild.sh][gokcehan/lf]].
-	[ -z $$version ] && version=$$(git describe --tags)
+	[ -z $$version ] && version=$$(git tag | tail -n1)
 
 	mkdir -p dist
 	build()     { go build -ldflags="-s -w -X main.gVersion=$$version" -o dotty     && tar czf dist/dotty-$${GOOS}-$${GOARCH}.tar.gz   dotty       --remove-files; }
-	build_win() { go build -ldflags="-s -w -X main.gVersion=$$version" -o dotty.exe && zip     dist/dotty-$${GOOS}-$${GOARCH}.zip      dotty.exe   --move; }
+	build_win() { go build -ldflags="-s -w -X main.gVersion=$$version" -o dotty.exe && tar czf dist/dotty-$${GOOS}-$${GOARCH}.tar.gz   dotty.exe   --remove-files; }
+	# build_win() { go build -ldflags="-s -w -X main.gVersion=$$version" -o dotty.exe && zip     dist/dotty-$${GOOS}-$${GOARCH}.zip      dotty.exe   --move; }
 
 	CGO_ENABLED=0 GOOS=darwin    GOARCH=amd64    build
 	CGO_ENABLED=0 GOOS=dragonfly GOARCH=amd64    build
