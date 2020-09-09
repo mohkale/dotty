@@ -75,8 +75,8 @@ RSpec.describe :import do
       end
     end
 
-    Timeout::timeout(20) do
-      dotty_run_script '((:info "inside main, importing target") (:import "foo.edn"))', dotty do |_,_,_,serr|
+    Timeout.timeout(20) do
+      dotty_run_script '((:info "inside main, importing target") (:import "foo.edn"))', dotty do |_, _, _, serr|
         err = serr.read
         expect(err.uncolorize).to match(/WRN skipping import because it's already been imported/i)
       end
