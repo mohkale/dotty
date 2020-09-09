@@ -202,7 +202,7 @@ func saveBots(path string, bots []string) {
 		}
 	}
 
-	fd, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0700)
+	fd, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
 		log.Fatal().Str("path", path).
 			Err(err).
