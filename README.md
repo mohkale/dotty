@@ -58,9 +58,6 @@
 - builtin support for package managers
 - (recursive (recursive (recursive (...))))
 
-## Setup
-TODO setup
-
 ## Example
 Here's a basic config file for setting up python, alongside some python packages. It
 should give a high level overview of what your dotfile config will look like using
@@ -87,6 +84,61 @@ dotty.
         "edn_format"
         {:pkg "RequestMixin" :git "mohkale"}
         {:pkg "DownloadQueue" :git "mohkale"}))
+)
+```
+
+## Setup
+I recommend creating a script at the root of your dotfiles repository
+to automatically fetch dotty when it's not available on your system.
+
+```sh
+#!/usr/bin/sh
+
+# exit on any errors
+set -e
+
+# which release of dotty you want to use
+dotty_url=https://github.com/mohkale/dotty/releases/download/1.0.0/dotty-linux-arm64.tar.gz
+
+# where to put the release
+dest_path=./setup/dotty
+
+# download dotty when you don't have it available.
+if ! [ -e "$dest_path" ]; then
+  curl -o "$dest_path" -L "$dotty_url"
+fi
+
+"$dest_path" "$@"
+```
+
+If you intend to use dotty across multiple platforms or architectures, you may find
+it easier to build dotty from source or to retrieve a dotty version for your current
+platform.
+
+By convention each [release][release] contains compiled executables for a majority of
+kernels and architectures. You can create a script such as [this][arch] and
+[this][kernel] to determine your current architecture and kernel name, and substitute
+these into the url above to support cross platform and cross architecture
+installations.
+
+[release]: https://github.com/mohkale/dotty
+[arch]: https://github.com/mohkale/dotfiles/blob/6454e57d4393d886015a127030894f7d0ca9c3ae/setup/arch
+[kernel]: https://github.com/mohkale/dotfiles/blob/6454e57d4393d886015a127030894f7d0ca9c3ae/setup/kernel
+
+```sh
+kernel=$(./setup/kernel)
+arch=$(./setup/arch)
+dotty_url=https://github.com/mohkale/dotty/releases/download/1.0.0/dotty-$kernel-$arch.tar.gz
+
+...
+```
+
+Now you create a file at the root of your repository named `config.edn` and dotty
+will automatically import it when installing.
+
+```clojure
+(
+ (:info "hello new dotfiles :grin:")
 )
 ```
 
