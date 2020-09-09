@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     name: deploy nightly
+    # disabled because windows builds produced by this are broken.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go 1.x
