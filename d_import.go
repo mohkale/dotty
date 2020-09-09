@@ -55,10 +55,16 @@ func dImport(ctx *Context, args anySlice) {
 				return
 			}
 
-			log.Info().Str("path", file).Msg("Importing config file")
-			loadEdnSlice(file, func(conf anySlice) {
-				dispatchDirectives(ctx.chdir(fp.Dir(file)), conf)
-			})
+			if stringSliceContains(*ctx.imports, file) {
+				log.Warn().Str("path", file).Msg("Skipping import because it's already been imported")
+			} else {
+				*ctx.imports = append(*ctx.imports, file)
+
+				log.Info().Str("path", file).Msg("Importing config file")
+				loadEdnSlice(file, func(conf anySlice) {
+					dispatchDirectives(ctx.chdir(fp.Dir(file)), conf)
+				})
+			}
 		},
 		func(opts map[any]any) (any, bool) {
 			src, ok := opts[edn.Keyword("path")]

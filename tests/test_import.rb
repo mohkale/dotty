@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'timeout'
 require 'colorize'
 require_relative 'utils'
 
@@ -64,5 +65,21 @@ RSpec.describe :import do
     end
   ensure
     dotty.cleanup
+  end
+
+  it "doesn't allow cyclic imports" do
+    target = Pathname.new('foo.edn')
+    dotty.in_config do
+      target.open('w') do |fd|
+        fd.write('((:info "inside target, importing main") (:import "config"))')
+      end
+    end
+
+    Timeout::timeout(20) do
+      dotty_run_script '((:info "inside main, importing target") (:import "foo.edn"))', dotty do |_,_,_,serr|
+        err = serr.read
+        expect(err.uncolorize).to match(/WRN skipping import because it's already been imported/i)
+      end
+    end
   end
 end

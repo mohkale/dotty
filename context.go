@@ -20,6 +20,9 @@ type Context struct {
 	// using envOpts.
 	shell string
 
+	// The path to all the configs we've imported.
+	imports *[]string
+
 	bots []string
 
 	onlyDirectives   []string
@@ -41,12 +44,14 @@ type Context struct {
 }
 
 func createContext() *Context {
+	imports := make([]string, 0)
 	return &Context{
 		root:             "",
 		cwd:              "",
 		shell:            "",
 		home:             "",
 		bots:             make([]string, 0),
+		imports:          &imports,
 		dirChan:          make(chan directive),
 		mkdirOpts:        make(map[string]any),
 		linkOpts:         make(map[string]any),
@@ -110,6 +115,7 @@ func (ctx *Context) clone() *Context {
 	clone.dirChan = ctx.dirChan
 	clone.onlyDirectives = ctx.onlyDirectives
 	clone.exceptDirectives = ctx.exceptDirectives
+	clone.imports = ctx.imports
 
 	// Fields that are expected to be mutated at different points.
 	_cloneDirectiveOpts(ctx.mkdirOpts, clone.mkdirOpts)
