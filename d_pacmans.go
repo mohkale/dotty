@@ -163,7 +163,7 @@ var packageManagers = map[edn.Keyword]*packageManager{
 
 			// extract global installation option
 			var global bool
-			if !readMapOptionBool(nil, opts, &global, "global", true) {
+			if !readMapOptionBool(nil, opts, &global, "global", false) {
 				return nil, false
 			}
 			if !global {
