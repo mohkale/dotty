@@ -1,12 +1,13 @@
+---
 name: deploy nightly
 
 on:
   # schedule:
   #   - cron: '0 2 * * *' # run at 2 AM UTC
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build:
@@ -28,11 +29,11 @@ jobs:
         run: make build-release
       - name: Bundle Releases
         # because most linuxes have zip, no windows have tar ・゜・(ノД`)
-        run: zip dist.zip dist --move -r
+        run: zip dist.zip bin/release --move -r
       - name: Deploy release
         uses: WebFreak001/deploy-nightly@v1.1.0
         env:
-           # automatically provided by github actions
+          # automatically provided by github actions
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           # see https://api.github.com/repos/mohkale/dotty/releases

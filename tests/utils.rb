@@ -73,7 +73,7 @@ class Dotty
   end
 
   def self.dotty_bin
-    @dotty_bin = File.join(File.dirname(__dir__), 'dotty') if @dotty_bin.nil?
+    @dotty_bin = File.join(File.dirname(__dir__), 'bin', 'dotty') if @dotty_bin.nil?
     @dotty_bin
   end
 end
