@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 
-	"github.com/drone/envsubst"
 	"github.com/rs/zerolog/log"
 )
 
@@ -159,13 +158,7 @@ func (ctx *Context) getenv(str string) string {
 }
 
 func (ctx *Context) eval(str string) (string, bool) {
-	res, ok := envsubst.Eval(str, ctx.getenv)
-	if ok != nil {
-		log.Error().Str("str", str).
-			Msg("Substitution failed")
-		return "", false
-	}
-	return res, true
+	return os.Expand(str, ctx.getenv), true
 }
 
 /**
