@@ -16,7 +16,7 @@ import (
 var PROG_NAME = "dotty"
 
 // The version of this program
-var progVersion = "0.0.0"
+var progVersion = "0.0.2"
 
 var usage = fmt.Sprintf(`
 %s is the delightfully lispy dotfile manager.

@@ -1,15 +1,17 @@
+# frozen_string_literal: true
+
 RSpec.describe :def do
   dotty = Dotty.new
 
-  it "can set environment variables" do
+  it 'can set environment variables' do
     dotty_run_script '((:def "foo" "bar") (:shell {:cmd "echo foo is $foo" :interactive true}))', dotty do |_, _, sout|
       expect(sout.read.uncolorize).to match(/foo is bar/)
     end
   end
 
-  it "can reference environment variables in :link" do
+  it 'can reference environment variables in :link' do
     var = 'bar'
-    src = Pathname.new("foo")
+    src = Pathname.new('foo')
     dotty.in_config do
       src.open('w')
       expect(src).to exist
@@ -25,7 +27,7 @@ RSpec.describe :def do
     dotty.cleanup
   end
 
-  it "can reference environment variables in :link with #dot/link-gen" do
+  it 'can reference environment variables in :link with #dot/link-gen' do
     var = 'foo'
     src = Pathname.new(var)
     dotty.in_config do
@@ -35,8 +37,7 @@ RSpec.describe :def do
 
     # TODO: Fix var itself isn't sufficient for #dot/link-gen
     dotty.script "((:def \"foo\" \"$HOME/.#{var}\") #dot/link-gen (:link \"$foo/foo\"))"
-    dotty.run_wait do |_, _, serr|
-      puts serr.read
+    dotty.run_wait do
       dotty.in_home do
         expect(Pathname.new(".#{var}") / var).to exist
       end
