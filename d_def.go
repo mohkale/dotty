@@ -32,7 +32,7 @@ import (
 // Pseudo directive for assigning options in the current context.
 func dDef(ctx *Context, args anySlice) {
 	var assignEnvOpt = func(key string, val any) {
-		valString := fmt.Sprintf("%s", val)
+		valString, _ := ctx.eval(fmt.Sprintf("%s", val))
 		log.Debug().Str("key", key).
 			Str("val", valString).
 			Msg("Setting environment key with value")
