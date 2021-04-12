@@ -132,7 +132,7 @@ func tLinkGen(args AnySlice) (AnySlice, error) {
 			}
 
 			newArgs = append(newArgs, pathMap)
-		} else if paths, ok := dLinkGeneratePaths(&Context{}, AnySlice{path}, "dest"); ok {
+		} else if paths, ok := dLinkGeneratePaths(".", func(s string) (string, bool) { return s, true }, AnySlice{path}, "dest"); ok {
 			for _, dest := range paths {
 				if src, ok := tLinkGenGetSrc(dest); ok {
 					newArgs = append(newArgs, src)

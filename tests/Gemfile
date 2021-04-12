@@ -7,6 +7,7 @@ git_source(:github) do |repo_name|
 end
 
 gem 'colorize'
+gem 'pry'
 gem 'rspec'
 gem 'rspec-core'
 gem 'rubocop'

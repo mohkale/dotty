@@ -43,14 +43,14 @@ type linkDirective struct {
 //
 // logTitle is used to let include which path type (src or dest) we're
 // building in the logging output.
-func dLinkGeneratePaths(ctx *Context, arg Any, logTitle string) ([]string, bool) {
+func dLinkGeneratePaths(cwd string, eval func(string) (string, bool), arg Any, logTitle string) ([]string, bool) {
 	if str, ok := arg.(string); ok {
-		if str, ok = ctx.eval(str); ok {
-			return []string{JoinPath(ctx.Cwd, fp.FromSlash(str))}, true
+		if str, ok = eval(str); ok {
+			return []string{JoinPath(cwd, fp.FromSlash(str))}, true
 		}
 	} else if slice, ok := arg.(AnySlice); ok {
 		ch, paths := make(chan string), make([]string, 0)
-		go recursiveBuildPath(ch, slice, ctx.Cwd, ctx.eval, func(_ string, arg Any) {
+		go recursiveBuildPath(ch, slice, cwd, eval, func(_ string, arg Any) {
 			log.Fatal().Interface("spec", arg).
 				Interface("path", arg).
 				Msgf("Link paths must be a string or a list of strings, not %T", arg)
@@ -95,7 +95,7 @@ LoopStart:
 						Msgf("Link directive must specify a %s", edn.Keyword(path.field))
 					continue LoopStart
 				}
-				if paths, ok := dLinkGeneratePaths(ctx, arg, path.field); ok {
+				if paths, ok := dLinkGeneratePaths(ctx.Cwd, ctx.eval, arg, path.field); ok {
 					path.paths = paths
 				} else {
 					continue LoopStart
@@ -112,11 +112,11 @@ LoopStart:
 
 			i++
 			// NOTE cleaning up this duplication would take even more lines, so lets leave it.
-			src, ok := dLinkGeneratePaths(ctx, path, "src")
+			src, ok := dLinkGeneratePaths(ctx.Cwd, ctx.eval, path, "src")
 			if !ok {
 				continue
 			}
-			dest, ok := dLinkGeneratePaths(ctx, args[i], "dest")
+			dest, ok := dLinkGeneratePaths(ctx.Cwd, ctx.eval, args[i], "dest")
 			if !ok {
 				continue
 			}
