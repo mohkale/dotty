@@ -97,7 +97,7 @@ module DottyHelpers
     dotty.run_wait(*flags) do |sin, sout, serr, proc|
       err = serr.read
       expect(proc.to_i).to eq(0), err
-      block.call(dotty, sin, sout, StringIO.new(err), proc)
+      block&.call(dotty, sin, sout, StringIO.new(err), proc)
     end
   ensure
     dotty.cleanup

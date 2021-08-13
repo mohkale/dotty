@@ -99,6 +99,17 @@ type fileInfoWithPath struct {
 }
 
 func (dir *cleanDirective) Run() {
+	if _, err := os.Stat(dir.path); os.IsNotExist(err) {
+		log.Debug().Str("path", dir.path).
+			Msg("Skipping cleaning because path doesn't exist")
+		return
+	} else if err != nil {
+		log.Error().Str("path", dir.path).
+			Str("error", err.Error()).
+			Msg("Failed to stat path to clean")
+		return
+	}
+
 	fileCh := make(chan fileInfoWithPath)
 	go dir.getFiles(fileCh)
 	for file := range fileCh {

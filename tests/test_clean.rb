@@ -84,4 +84,8 @@ RSpec.describe :clean do
   ensure
     dotty.cleanup
   end
+
+  it "doesn't error when cleaning a non-existant directory'" do
+    dotty_run_script '((:clean "~/foo"))'
+  end
 end
